@@ -69,3 +69,7 @@ Testing/
 
 # KiCad automatic backups
 *-backups/
+
+# ESPHome
+secrets.yaml
+.esphome/
