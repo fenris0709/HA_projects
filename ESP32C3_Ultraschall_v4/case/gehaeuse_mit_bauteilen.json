@@ -1,0 +1,1442 @@
+{
+ "commands": [
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 81.0,
+    "width": 146.0,
+    "height": 32.0,
+    "corner": [
+     0,
+     0,
+     0
+    ],
+    "body_name": "Unterteil"
+   }
+  },
+  {
+   "command": "solid.fillet",
+   "params": {
+    "body": "Unterteil",
+    "radius": 3,
+    "edges": [
+     [
+      0,
+      0,
+      16.0
+     ],
+     [
+      81.0,
+      0,
+      16.0
+     ],
+     [
+      0,
+      146.0,
+      16.0
+     ],
+     [
+      81.0,
+      146.0,
+      16.0
+     ]
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 77.0,
+    "width": 142.0,
+    "height": 31.0,
+    "corner": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 7.0,
+    "width": 7.0,
+    "height": 30.0,
+    "corner": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 2.5,
+    "height": 15,
+    "base": [
+     5.5,
+     5.5,
+     18.0
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 7.0,
+    "width": 7.0,
+    "height": 30.0,
+    "corner": [
+     72.0,
+     2.0,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 2.5,
+    "height": 15,
+    "base": [
+     75.5,
+     5.5,
+     18.0
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 7.0,
+    "width": 7.0,
+    "height": 30.0,
+    "corner": [
+     2.0,
+     137.0,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 2.5,
+    "height": 15,
+    "base": [
+     5.5,
+     140.5,
+     18.0
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 7.0,
+    "width": 7.0,
+    "height": 30.0,
+    "corner": [
+     72.0,
+     137.0,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 2.5,
+    "height": 15,
+    "base": [
+     75.5,
+     140.5,
+     18.0
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     6.99,
+     12.25,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     6.99,
+     12.25,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     6.99,
+     36.25,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     6.99,
+     36.25,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.99,
+     12.25,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.99,
+     12.25,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.99,
+     36.25,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.99,
+     36.25,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     6.99,
+     109.77,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     6.99,
+     109.77,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     6.99,
+     133.77,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     6.99,
+     133.77,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.99,
+     109.77,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.99,
+     109.77,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.99,
+     133.77,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.99,
+     133.77,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     7.21,
+     60.31,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     7.21,
+     60.31,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     7.21,
+     85.71,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     7.21,
+     85.71,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.77,
+     60.31,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.77,
+     60.31,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 5.0,
+    "height": 5.0,
+    "base": [
+     42.77,
+     85.71,
+     2.0
+    ],
+    "axis": "Z",
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 1.7,
+    "height": 5.0,
+    "base": [
+     42.77,
+     85.71,
+     2.5
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 24.4,
+    "width": 81.4,
+    "height": 2.0,
+    "corner": [
+     48.78,
+     31.3,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 22.0,
+    "width": 79.0,
+    "height": 3.0,
+    "corner": [
+     49.98,
+     32.5,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10,
+    "width": 2.2,
+    "height": 3.0,
+    "corner": [
+     55.98,
+     30.8,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10,
+    "width": 2.2,
+    "height": 3.0,
+    "corner": [
+     55.98,
+     111.0,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 20.6,
+    "width": 17.5,
+    "height": 4.5,
+    "corner": [
+     58.4,
+     119.2,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 20.4,
+    "width": 15.1,
+    "height": 5,
+    "corner": [
+     59.6,
+     120.4,
+     5.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 4.0,
+    "width": 5.5,
+    "height": 7.5,
+    "corner": [
+     78.0,
+     125.2,
+     3.8499999999999996
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 7.5,
+    "height": 4.0,
+    "base": [
+     78.0,
+     125.2,
+     7.6
+    ],
+    "axis": "X",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 7.5,
+    "height": 4.0,
+    "base": [
+     78.0,
+     130.7,
+     7.6
+    ],
+    "axis": "X",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 4.0,
+    "width": 3.0,
+    "height": 10.0,
+    "corner": [
+     -1,
+     71.51,
+     14.900000000000002
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 10.0,
+    "height": 4.0,
+    "base": [
+     -1,
+     71.51,
+     19.900000000000002
+    ],
+    "axis": "X",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 10.0,
+    "height": 4.0,
+    "base": [
+     -1,
+     74.51,
+     19.900000000000002
+    ],
+    "axis": "X",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 20.2,
+    "height": 4.0,
+    "base": [
+     60.98,
+     -1,
+     17.0
+    ],
+    "axis": "Y",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 6.0,
+    "width": 4.0,
+    "height": 12.0,
+    "corner": [
+     21.99,
+     -1,
+     23.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 6.0,
+    "height": 4.0,
+    "base": [
+     24.99,
+     -1,
+     23.0
+    ],
+    "axis": "Y",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 6.0,
+    "width": 4.0,
+    "height": 12.0,
+    "corner": [
+     21.99,
+     143.0,
+     23.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 6.0,
+    "height": 4.0,
+    "base": [
+     24.99,
+     143.0,
+     23.0
+    ],
+    "axis": "Y",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 16.0,
+    "width": 11.0,
+    "height": 3.0,
+    "corner": [
+     32.5,
+     -10.0,
+     0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 4.5,
+    "height": 5.0,
+    "base": [
+     40.5,
+     -5.0,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 16.0,
+    "width": 11.0,
+    "height": 3.0,
+    "corner": [
+     32.5,
+     146.0,
+     0
+    ],
+    "operation": "join",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 4.5,
+    "height": 5.0,
+    "base": [
+     40.5,
+     151.0,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Unterteil"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 81.0,
+    "width": 146.0,
+    "height": 2.0,
+    "corner": [
+     96.0,
+     0,
+     0
+    ],
+    "body_name": "Deckel"
+   }
+  },
+  {
+   "command": "solid.fillet",
+   "params": {
+    "body": "Deckel",
+    "radius": 3,
+    "edges": [
+     [
+      96.0,
+      0,
+      1.0
+     ],
+     [
+      177.0,
+      0,
+      1.0
+     ],
+     [
+      96.0,
+      146.0,
+      1.0
+     ],
+     [
+      177.0,
+      146.0,
+      1.0
+     ]
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 76.4,
+    "width": 141.4,
+    "height": 4.0,
+    "corner": [
+     98.3,
+     2.3,
+     2.0
+    ],
+    "operation": "join",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 73.4,
+    "width": 138.4,
+    "height": 5.0,
+    "corner": [
+     99.8,
+     3.8,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 8.0,
+    "height": 5.0,
+    "corner": [
+     167.5,
+     1.5,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.4,
+    "height": 4.0,
+    "base": [
+     171.5,
+     5.5,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 8.0,
+    "height": 5.0,
+    "corner": [
+     97.5,
+     1.5,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.4,
+    "height": 4.0,
+    "base": [
+     101.5,
+     5.5,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 8.0,
+    "height": 5.0,
+    "corner": [
+     167.5,
+     136.5,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.4,
+    "height": 4.0,
+    "base": [
+     171.5,
+     140.5,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 8.0,
+    "height": 5.0,
+    "corner": [
+     97.5,
+     136.5,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 3.4,
+    "height": 4.0,
+    "base": [
+     101.5,
+     140.5,
+     -1
+    ],
+    "axis": "Z",
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 4,
+    "height": 5.0,
+    "corner": [
+     148.01,
+     1.0,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 8.0,
+    "width": 4,
+    "height": 5.0,
+    "corner": [
+     148.01,
+     141.0,
+     2.0
+    ],
+    "operation": "cut",
+    "targets": [
+     "Deckel"
+    ]
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "Unterteil",
+     "Deckel"
+    ],
+    "color": "#d9d9d9"
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 41.3,
+    "width": 28.5,
+    "height": 12,
+    "corner": [
+     4.34,
+     10.0,
+     7.0
+    ],
+    "body_name": "JSN2"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "JSN2"
+    ],
+    "color": "#2a5db0",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10,
+    "width": 5.8,
+    "height": 2.5,
+    "corner": [
+     19.99,
+     38.5,
+     8.6
+    ],
+    "body_name": "JSN2_Stifte"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "JSN2_Stifte"
+    ],
+    "color": "#c9a227",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 41.3,
+    "width": 28.5,
+    "height": 12,
+    "corner": [
+     4.34,
+     107.52,
+     7.0
+    ],
+    "body_name": "JSN1"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "JSN1"
+    ],
+    "color": "#2a5db0",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 10,
+    "width": 5.8,
+    "height": 2.5,
+    "corner": [
+     19.99,
+     101.72,
+     8.6
+    ],
+    "body_name": "JSN1_Stifte"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "JSN1_Stifte"
+    ],
+    "color": "#c9a227",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 43.18,
+    "width": 33.02,
+    "height": 1.6,
+    "corner": [
+     3.4,
+     56.5,
+     7.0
+    ],
+    "body_name": "Lochraster"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "Lochraster"
+    ],
+    "color": "#b07a3c",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 22.5,
+    "width": 18,
+    "height": 4.5,
+    "corner": [
+     3.9,
+     64.01,
+     17.1
+    ],
+    "body_name": "ESP32C3"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "ESP32C3"
+    ],
+    "color": "#333333",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 21.0,
+    "width": 78.0,
+    "height": 20.0,
+    "corner": [
+     50.48,
+     33.0,
+     2.0
+    ],
+    "body_name": "Akkuhalter"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "Akkuhalter"
+    ],
+    "color": "#202020",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.box",
+   "params": {
+    "length": 17.9,
+    "width": 14.1,
+    "height": 4.2,
+    "corner": [
+     60.1,
+     120.9,
+     5.0
+    ],
+    "body_name": "TP4056"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "TP4056"
+    ],
+    "color": "#1a1a1a",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": 21.0,
+    "height": 25.0,
+    "base": [
+     60.98,
+     2.0,
+     17.0
+    ],
+    "axis": "Y",
+    "body_name": "Schalter"
+   }
+  },
+  {
+   "command": "appearance.assign",
+   "params": {
+    "bodies": [
+     "Schalter"
+    ],
+    "color": "#aa2222",
+    "opacity": 0.85
+   }
+  },
+  {
+   "command": "inspect.interference",
+   "params": {}
+  }
+ ]
+}
