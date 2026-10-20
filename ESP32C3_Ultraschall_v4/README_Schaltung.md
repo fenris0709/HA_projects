@@ -2,6 +2,8 @@
 
 Datei: `ESP32C3_Ultraschall_v4.kicad_sch` (KiCad 10), eigene Symbole in `proj_modules.kicad_sym`.
 
+> Prototyp ohne PCB (Lochraster, vereinfachte Schaltung ohne MT3608, 3D-Druck-Gehäuse): siehe [PROTOTYP_Lochraster.md](PROTOTYP_Lochraster.md) und `case/`.
+
 ## Konzept
 - ESP32-C3 hängt dauerhaft an der Batterie (über Schalter SW1) am 5V-Pin. Der Onboard-Regler liefert 3,3 V. Der ESP schläft im Deep Sleep.
 - Der MT3608 (Boost auf 5 V) und damit beide JSN-SR04T sind nur aktiv, wenn GPIO3 (SEN_EN) HIGH ist.
