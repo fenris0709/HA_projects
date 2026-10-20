@@ -31,9 +31,17 @@ SC_CLI = r"C:\Program Files\SolidCraft\solidcraft-cli.exe"
 T = 2.0            # Wandstaerke (Schalter Einbaustaerke beachten)
 FL = 2.0           # Bodenstaerke
 HI = 30.0          # Innenhoehe
-POST = 7.0         # Eckpfosten fuer Deckelschrauben (Kantenlaenge)
-POST_PILOT = 2.5   # Kernloch M3 selbstschneidend (3.0 fuer Gewindeeinsatz anpassen)
-BOSS_D, BOSS_PILOT = 5.0, 1.7   # Dome fuer M2 selbstschneidend
+# Gewindeeinsaetze zum Einschmelzen (True) oder selbstschneidende Schrauben (False).
+# Bohrung/Tiefe an die vorhandenen Einsaetze anpassen (Werte unten: gaengige Ruthex-Masse).
+USE_INSERTS = True
+if USE_INSERTS:
+    POST = 8.0                          # Eckpfosten fuer Deckelschrauben (Kantenlaenge)
+    POST_PILOT, POST_DEPTH = 4.0, 7.0   # M3-Einsatz (z. B. M3 x 5.7, Bohrung 4.0)
+    BOSS_D, BOSS_PILOT = 6.0, 3.2       # M2-Einsatz (z. B. M2 x 3, Bohrung 3.2), Dom-Durchmesser
+else:
+    POST = 7.0
+    POST_PILOT, POST_DEPTH = 2.5, 14.0  # M3 selbstschneidend
+    BOSS_D, BOSS_PILOT = 5.0, 1.7       # M2 selbstschneidend
 
 # JSN-SR04T V3.0 Steuerplatine (Datenblatt: 41.3 x 28.5, Loecher 4x d2 im Raster 36 x 24)
 JSN_W, JSN_L = 41.3, 28.5
@@ -41,15 +49,20 @@ JSN_HX, JSN_HY = 36.0, 24.0
 JSN_PINS = 5.8     # Stifte ragen in der Platinenebene ueber die Kante (34.3 - 28.5)
 JSN_BOSS_H = 5.0
 
-# Lochraster 17 x 13 Raster = 43.18 x 33.02, Befestigung in Rasterloch (1,1),(15,1),(1,11),(15,11) -> auf 2.2 aufbohren
-PB_W, PB_L = 17 * 2.54, 13 * 2.54
-PB_HX, PB_HY = 14 * 2.54, 10 * 2.54
-PB_BOSS_H = 5.0
-GAP_JSN_PB = 18.0  # Platz fuer Dupont-Stecker zwischen JSN-Kante und Lochraster
+# Streifenraster 10 x 14 Raster = 25.4 x 35.56 (Layout: ../docs/stripboard.svg), ohne Befestigungsloecher:
+# liegt auf 4 Eckauflagen, links unter zwei Leisten an der Gehaeusewand, rechts von 2 Rastzungen gehalten.
+PB_W, PB_L = 10 * 2.54, 14 * 2.54
+PB_BOSS_H = 5.0    # Hoehe der Auflagen (Platz fuer Loetstellen unter der Platine)
+PB_T = 1.6         # Platinenstaerke
+PB_GAP = 0.3       # Spiel rund um die Platine
+CLIP_W, CLIP_T, CLIP_HOOK = 5.0, 1.2, 1.1   # Rastzunge: Breite, Dicke, Ueberstand der Nase ab Zunge
+GAP_JSN_PB = 22.0  # Dupont-Stecker (14 mm) + Kabelbogen zwischen JSN-Kante und Platine
+ESP_USB_ROW = 8    # Rasterzeile der ESP-Mitte (Zeile 0 = Kante Richtung JSN #1)
 
 # ESP32-C3 SuperMini USB-C (Lochraster links an der Wand, ESP in Buchsenleiste)
-ESP_USB_Z = PB_BOSS_H + 1.6 + 8.5 + 1.2 + 1.6   # Mitte USB-C ueber Innenboden
-ESP_USB_W, ESP_USB_H = 13.0, 10.0
+ESP_HDR_SPACER, ESP_PCB = 2.5, 1.0                # Kunststoffsteg der Stiftleiste am ESP, Platinenstaerke
+ESP_USB_Z = PB_BOSS_H + 1.6 + 8.5 + ESP_HDR_SPACER + ESP_PCB + 1.6   # Mitte USB-C ueber Innenboden
+ESP_USB_W, ESP_USB_H = 13.0, 11.0
 
 # 18650 Halter (1 Zelle) - wird aufgeklebt, an den Enden Platz fuer Loetfahnen/Draehte
 BAT_W, BAT_L, BAT_H = 21.0, 78.0, 20.0
@@ -95,7 +108,7 @@ TP_U = WI - 1.0 - TP_L
 TP_V = LI - END - TP_W - 1.0
 A_UC = A_U0 + COL_A_W / 2
 JSN_U = A_UC - JSN_W / 2
-PB_U = A_UC - PB_W / 2
+PB_U = PB_GAP                           # Platine links an der Wand (USB-C des ESP)
 
 WO, LO, HO = WI + 2 * T, LI + 2 * T, HI + FL
 
@@ -143,21 +156,45 @@ box(None, P(0, 0), [WI, LI, HI + 1], "cut")
 POSTS = [(0, 0), (WI - POST, 0), (0, LI - POST), (WI - POST, LI - POST)]
 for (u, v) in POSTS:
     box(None, P(u, v), [POST, POST, HI], "join")
-    cyl(P(u + POST / 2, v + POST / 2, HI - 14), POST_PILOT, 15)
+    cyl(P(u + POST / 2, v + POST / 2, HI - POST_DEPTH), POST_PILOT, POST_DEPTH + 1)
 
 
-def bosses(u0, v0, dx, dy, h):
+def bosses(u0, v0, dx, dy, h, d=None, pilot=None):
     for du in (0, dx):
         for dv in (0, dy):
-            cyl(P(u0 + du, v0 + dv), BOSS_D, h, op="join")
-            cyl(P(u0 + du, v0 + dv, 0.5), BOSS_PILOT, h)
+            cyl(P(u0 + du, v0 + dv), d or BOSS_D, h, op="join")
+            cyl(P(u0 + du, v0 + dv, 0.5), pilot or BOSS_PILOT, h)
+
+
+# Wanddurchbrueche (vor den Domen schneiden: SolidCraft-Kern ist reihenfolgeempfindlich)
+ESP_V = PB_V + PB_L - (ESP_USB_ROW * 2.54 + 1.27)                   # Zeile 0 liegt oben (JSN #1)
+slot_x(0, T + ESP_V, FL + ESP_USB_Z, ESP_USB_W, ESP_USB_H)            # ESP USB-C links
+cyl([round(T + SW_U, 3), -1, round(FL + SW_Z, 3)], SW_HOLE, T + 2, "Y")  # Schalter vorne
+for vwall in (-1, LO - T - 1):                                         # Kabelschlitze vorne/hinten
+    box(None, [T + A_UC - CABLE_W / 2, vwall, HO - CABLE_DEPTH + CABLE_W / 2], [CABLE_W, T + 2, CABLE_DEPTH], "cut")
+    cyl([T + A_UC, vwall, HO - CABLE_DEPTH + CABLE_W / 2], CABLE_W, T + 2, "Y")
 
 
 # JSN-Dome (Lochbild symmetrisch, Drehung egal)
 for v in (JSN2_V, JSN1_V):
     bosses(JSN_U + (JSN_W - JSN_HX) / 2, v + (JSN_L - JSN_HY) / 2, JSN_HX, JSN_HY, JSN_BOSS_H)
 # Lochraster / spaeteres PCB
-bosses(PB_U + (PB_W - PB_HX) / 2, PB_V + (PB_L - PB_HY) / 2, PB_HX, PB_HY, PB_BOSS_H)
+# Streifenraster: Eckauflagen, Anschlaege oben/unten, Leisten links, Rastzungen rechts
+PB_TOP = PB_BOSS_H + PB_T
+for (u, v) in ((PB_U + 11.6, PB_V), (PB_U + PB_W - 2.2, PB_V), (PB_U, PB_V + PB_L - 2.2), (PB_U + PB_W - 2.2, PB_V + PB_L - 2.2)):
+    box(None, P(u, v), [2.2, 2.2, PB_BOSS_H], "join")
+for col in (0.5, 9):                    # Anschlaege an freien Randloechern (oben: Spalte 0/1 und 9, unten: 6/7 und 9)
+    box(None, P(PB_U + col * 2.54 - 0.4, PB_V + PB_L + PB_GAP), [3, 1.2, PB_TOP + 1.0], "join")
+for col in (6.5, 9):
+    box(None, P(PB_U + col * 2.54 - 0.4, PB_V - PB_GAP - 1.2), [3, 1.2, PB_TOP + 1.0], "join")
+for (v0, v1) in ((PB_V + PB_L - 6.5, PB_V + PB_L - 1.0), (PB_V + 8.0, PB_V + 12.5)):   # Leisten links (frei von J3/Draehten)
+    box(None, P(-0.3, v0, PB_TOP + 0.15), [PB_U + 1.0, v1 - v0, 1.4], "join")   # 0,3 mm in die Wand
+for v in (PB_V + PB_L * 0.3, PB_V + PB_L * 0.7):                                 # Rastzungen rechts
+    ux = PB_U + PB_W + PB_GAP
+    box(None, P(ux, v - CLIP_W / 2), [CLIP_T, CLIP_W, PB_TOP + 0.15 + 1.6], "join")
+    for k in range(3):   # Nase: unten volle Ueberdeckung, oben schraeg (Einfuehrschraege in 3 Stufen)
+        o = CLIP_HOOK * (3 - k) / 3
+        box(None, P(ux - o, v - CLIP_W / 2, PB_TOP + 0.15 + 0.4 * k), [o + 0.3, CLIP_W, 0.4], "join")
 
 # Positionierrahmen 18650-Halter (Enden offen fuer Draehte)
 rim = 1.2
@@ -172,14 +209,7 @@ for v in (by0 - 0.5, by0 + bl - rim - 0.5):
 tpx0, tpy0 = TP_U - C - rim, TP_V - C - rim
 box(None, P(tpx0, tpy0), [WI - tpx0, TP_W + 2 * C + 2 * rim, TP_PLAT + 1.5], "join")
 box(None, P(TP_U - C, TP_V - C, TP_PLAT), [WI - TP_U + C + 1, TP_W + 2 * C, 5], "cut")
-
-# Wanddurchbrueche
 slot_x(1, T + TP_V + TP_W / 2, FL + TP_USB_Z, TP_USB_W, TP_USB_H)     # TP4056 USB-C rechts
-slot_x(0, T + PB_V + PB_L / 2, FL + ESP_USB_Z, ESP_USB_W, ESP_USB_H)  # ESP USB-C links
-cyl([round(T + SW_U, 3), -1, round(FL + SW_Z, 3)], SW_HOLE, T + 2, "Y")  # Schalter vorne
-for vwall in (-1, LO - T - 1):                                         # Kabelschlitze vorne/hinten
-    box(None, [T + A_UC - CABLE_W / 2, vwall, HO - CABLE_DEPTH + CABLE_W / 2], [CABLE_W, T + 2, CABLE_DEPTH], "cut")
-    cyl([T + A_UC, vwall, HO - CABLE_DEPTH + CABLE_W / 2], CABLE_W, T + 2, "Y")
 
 # Laschen zur Wandmontage
 for (y0, yh) in ((-EAR_L, 0 - EAR_L / 2), (LO, LO + EAR_L / 2)):
@@ -227,8 +257,8 @@ ph("JSN2", (JSN_U, JSN2_V, JSN_BOSS_H), (JSN_W, JSN_L, 12), "#2a5db0")
 ph("JSN2_Stifte", (A_UC - 5, JSN2_V + JSN_L, JSN_BOSS_H + 1.6), (10, JSN_PINS, 2.5), "#c9a227")
 ph("JSN1", (JSN_U, JSN1_V, JSN_BOSS_H), (JSN_W, JSN_L, 12), "#2a5db0")
 ph("JSN1_Stifte", (A_UC - 5, JSN1_V - JSN_PINS, JSN_BOSS_H + 1.6), (10, JSN_PINS, 2.5), "#c9a227")
-ph("Lochraster", (PB_U, PB_V, PB_BOSS_H), (PB_W, PB_L, 1.6), "#b07a3c")
-ph("ESP32C3", (PB_U + 0.5, PB_V + PB_L / 2 - 9, PB_BOSS_H + 1.6 + 8.5), (22.5, 18, 4.5), "#333333")
+ph("Streifenraster", (PB_U, PB_V, PB_BOSS_H), (PB_W, PB_L, PB_T), "#b07a3c")
+ph("ESP32C3", (PB_U + 0.3, ESP_V - 9, PB_BOSS_H + PB_T + 8.5 + ESP_HDR_SPACER), (22.5, 18, 4.5), "#333333")
 ph("Akkuhalter", (BAT_U, BAT_V, 0), (BAT_W, BAT_L, BAT_H), "#202020")
 ph("TP4056", (TP_U, TP_V, TP_PLAT), (TP_L, TP_W, 4.2), "#1a1a1a")
 cmd("solid.cylinder", diameter=SW_BODY_D, height=SW_DEPTH, base=P(SW_U, 0, SW_Z), axis="Y", body_name="Schalter")
