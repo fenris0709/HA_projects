@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Streifenraster-Layout fuer den Prototyp: prueft die Verbindungen und zeichnet stripboard.svg.
 
-Sensoren dauerhaft an 3V3, JSN-SR04T im Low-Power-Modus 4 (360k auf dem Mode-Loetfeld).
+2x TOF200C (VL53L0X) dauerhaft an 3V3, gemeinsamer I2C-Bus, je Sensor eine XSHUT-Leitung (Enable).
 Raster: 10 Spalten (c0..c9) x 14 Zeilen (r0..r13), 2.54 mm, Platine 25.4 x 35.56 mm.
 Die Kupferstreifen laufen SENKRECHT (eine Spalte = ein Streifen).
 Ansicht im SVG links: Bestueckungsseite, rechts: Kupferseite (gespiegelt) mit Trennstellen.
@@ -17,22 +17,22 @@ P = 2.54
 # Spalte 0 = GND-Bus, Spalten 1-8 = ESP, Spalte 9 = 3V3-Bus. Keine Befestigungsloecher:
 # die Platine wird im Gehaeuse eingeklipst (Auflagen an den Ecken, Rastnasen rechts, Leiste links).
 # Trennstellen (Streifen am Loch aufbohren, ca. 3 mm Bohrer von Hand)
-CUTS = [(c, 4) for c in (1, 4, 5, 8)] + [(c, 7) for c in range(1, 9)]
+CUTS = [(c, 4) for c in (4, 5)] + [(c, 7) for c in range(1, 9)]
 MOUNT = []
 
 # Bauteile: name -> (Beschriftung, [(pin, spalte, zeile, netz)], art)
 ESP_TOP = ["GPIO5", "GPIO6", "GPIO7", "GPIO8", "GPIO9", "GPIO10", "GPIO20", "GPIO21"]
 ESP_BOT = ["5V", "GND", "3V3", "GPIO4", "GPIO3", "GPIO2", "GPIO1", "GPIO0"]
-NET_OF_ESP = {"GPIO6": "TRIG1", "GPIO7": "ECHO1", "GPIO10": "ECHO2", "GPIO20": "TRIG2",
+NET_OF_ESP = {"GPIO5": "XSHUT1", "GPIO6": "SDA", "GPIO7": "SCL", "GPIO10": "XSHUT2",
               "5V": "VBAT_SW", "GND": "GND", "3V3": "3V3", "GPIO1": "VBDIV"}
 PARTS = {
     "U1": ("ESP32-C3 SuperMini", [(n, 1 + i, 5, NET_OF_ESP.get(n)) for i, n in enumerate(ESP_TOP)] +
            [(n, 1 + i, 11, NET_OF_ESP.get(n)) for i, n in enumerate(ESP_BOT)], "esp"),
-    # Pulldowns: TRIG im Deep Sleep (ESP-Pins hochohmig) sicher LOW, Sensoren sind immer versorgt
-    "R5": ("120k", [("1", 2, 0, "TRIG1"), ("2", 4, 0, "GND")], "r"),
-    "R6": ("120k", [("1", 5, 0, "GND"), ("2", 7, 0, "TRIG2")], "r"),
-    "J1": ("JSN #1", [("VCC", 1, 1, "3V3"), ("TRIG", 2, 1, "TRIG1"), ("ECHO", 3, 1, "ECHO1"), ("GND", 4, 1, "GND")], "hdr"),
-    "J2": ("JSN #2", [("GND", 5, 1, "GND"), ("ECHO", 6, 1, "ECHO2"), ("TRIG", 7, 1, "TRIG2"), ("VCC", 8, 1, "3V3")], "hdr"),
+    # Sensoranschluesse 1x5, Dupont-Kabel zu den ToF-Modulen (Pinreihenfolge am Modul egal, einzeln verdrahten)
+    "J1": ("ToF #1", [("XSHUT", 1, 1, "XSHUT1"), ("SDA", 2, 1, "SDA"), ("SCL", 3, 1, "SCL"),
+                      ("GND", 4, 1, "GND"), ("VIN", 5, 1, "3V3")], "hdr"),
+    "J2": ("ToF #2", [("SDA", 2, 0, "SDA"), ("SCL", 3, 0, "SCL"), ("GND", 4, 0, "GND"),
+                      ("VIN", 5, 0, "3V3"), ("XSHUT", 6, 0, "XSHUT2")], "hdr"),
     # Akku-Teiler liegend unter dem ESP (der sitzt ca. 11 mm ueber der Platine)
     "R1": ("1M", [("1", 1, 8, "VBAT_SW"), ("2", 7, 8, "VBDIV")], "r"),
     "R2": ("1M", [("1", 2, 9, "GND"), ("2", 7, 9, "VBDIV")], "r"),
@@ -42,18 +42,18 @@ PARTS = {
 }
 # Drahtbruecken auf der Bestueckungsseite: (netz, zeile, [spalten, an denen geloetet wird])
 WIRES = [
-    ("3V3", 2, [1, 8, 9]),
-    ("GND", 3, [0, 4, 5]),
+    ("3V3", 2, [5, 9]),
+    ("GND", 3, [0, 4]),
     ("GND", 12, [0, 2]),
     ("3V3", 12, [3, 9]),
 ]
 
 # Erwartete Netze laut Schaltplan (docs/schema_prototyp.svg)
 EXPECTED = {
-    "TRIG1": {"J1.TRIG", "U1.GPIO6", "R5.1"}, "ECHO1": {"J1.ECHO", "U1.GPIO7"},
-    "TRIG2": {"J2.TRIG", "U1.GPIO20", "R6.2"}, "ECHO2": {"J2.ECHO", "U1.GPIO10"},
-    "GND": {"J1.GND", "J2.GND", "U1.GND", "C2.-", "C1.1", "R2.1", "J3.GND", "R5.2", "R6.1"},
-    "3V3": {"U1.3V3", "C2.+", "J1.VCC", "J2.VCC"},
+    "SDA": {"J1.SDA", "J2.SDA", "U1.GPIO6"}, "SCL": {"J1.SCL", "J2.SCL", "U1.GPIO7"},
+    "XSHUT1": {"J1.XSHUT", "U1.GPIO5"}, "XSHUT2": {"J2.XSHUT", "U1.GPIO10"},
+    "GND": {"J1.GND", "J2.GND", "U1.GND", "C2.-", "C1.1", "R2.1", "J3.GND"},
+    "3V3": {"U1.3V3", "C2.+", "J1.VIN", "J2.VIN"},
     "VBAT_SW": {"U1.5V", "R1.1", "J3.VBAT"},
     "VBDIV": {"U1.GPIO1", "R1.2", "R2.2", "C1.2"},
 }
@@ -154,7 +154,7 @@ def check():
 
 # ---------------- Zeichnung ----------------
 NET_COL = {"GND": "#222222", "3V3": "#c0392b", "VBAT_SW": "#8e44ad", "VBDIV": "#27ae60",
-           "TRIG1": "#1f5fae", "ECHO1": "#1f5fae", "TRIG2": "#1f5fae", "ECHO2": "#1f5fae"}
+           "SDA": "#1f5fae", "SCL": "#0e8f9c", "XSHUT1": "#d35400", "XSHUT2": "#b7950b"}
 S = 34                      # Pixel pro Rastermass
 M = 46                      # Rand
 
@@ -225,7 +225,8 @@ def svg_board(ox, oy, mirror, out):
                 below = r > ROWS / 2
                 out.append(f'<text x="{X(c)}" y="{Y(r) + (24 if below else 22)}" font-size="9" text-anchor="middle" fill="{NET_COL.get(net, "#000")}" font-weight="bold">{name}</text>')
             ly = ys[0] + 40 if ys[0] > Y(ROWS // 2) else Y(0) - 34
-            out.append(f'<text x="{(x0 + x1) / 2}" y="{ly}" font-size="12" font-weight="bold" text-anchor="middle">{ref} {val}</text>')
+            lx_ = (x0 + x1) / 2 + (-55 if ref == "J1" else 55 if ref == "J2" else 0)
+            out.append(f'<text x="{lx_}" y="{ly}" font-size="12" font-weight="bold" text-anchor="middle">{ref} {val}</text>')
             continue
         (xa, ya), (xb, yb) = (xs[0], ys[0]), (xs[1], ys[1])
         color = {"r": "#c9a26b", "c": "#e8b04b", "elko": "#3a5fa0"}[kind]
@@ -266,7 +267,7 @@ def render(path):
         out.append(f'<text x="{lx + 40}" y="{y + 5}" font-size="13">{n}</text>')
     y = ly + 24 + len(leg) * 22 + 10
     items = [
-        ('<circle cx="{x}" cy="{y}" r="9" fill="#fff" stroke="#d00000" stroke-width="2.5"/>', "Streifen trennen (12×)"),
+        ('<circle cx="{x}" cy="{y}" r="9" fill="#fff" stroke="#d00000" stroke-width="2.5"/>', "Streifen trennen (10×)"),
         ('<rect x="{x0}" y="{y0}" width="12" height="12" fill="#bbb" stroke="#000"/>', "ESP-Pin unbenutzt"),
     ]
     for i, (shape, txt) in enumerate(items):
@@ -279,15 +280,15 @@ def render(path):
         f"2. Trennstellen bohren ({len(CUTS)}×)",
         f"3. Drahtbrücken ({len(WIRES)}×)",
         "4. R1, R2, C1 liegend (unter dem ESP)",
-        "5. R5, R6 stehend, nach oben gebogen",
-        "6. C2 Elko (+ an Spalte 3), Stift-/Buchsenleisten",
-        "7. Durchgang messen, dann ESP stecken",
+        "5. C2 Elko (+ an Spalte 3), Stift-/Buchsenleisten",
+        "6. Durchgang messen, dann ESP stecken",
         "",
         "Keine Befestigungslöcher: die Platine",
-        "wird im Gehäuse eingeklipst.",
-        "J2 ist gespiegelt belegt:",
-        "GND-ECHO-TRIG-VCC (JSN-Pin 4-3-2-1)",
-        "JSN: 3×120k in Reihe (=360k) auf 'Mode'",
+        "wird im Gehäuse eingeklebt (Heissleim).",
+        "J1: XSHUT-SDA-SCL-GND-VIN (Zeile 1)",
+        "J2: SDA-SCL-GND-VIN-XSHUT (Zeile 0)",
+        "Je Sensor 5 Dupont-Drähte einzeln.",
+        "SDA/SCL-Pull-ups sind auf den ToF-Modulen.",
         "ESP-Pins vor dem Löten am Modul prüfen!",
     ]
     for i, n in enumerate(notes):

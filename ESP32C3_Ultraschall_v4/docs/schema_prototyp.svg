@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" font-family="Segoe UI, Helvetica, Arial, sans-serif">
-<rect width="1400" height="860" fill="#ffffff"/>
-<text x="30" y="40" font-size="20" text-anchor="start" fill="#222" font-weight="bold" font-style="normal">Tankmonitor Prototyp (Streifenraster): ESP32-C3 SuperMini + 2x JSN-SR04T V3.0 + 18650</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="880" viewBox="0 0 1400 880" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1400" height="880" fill="#ffffff"/>
+<text x="30" y="40" font-size="20" text-anchor="start" fill="#222" font-weight="bold" font-style="normal">Tankmonitor Prototyp (Streifenraster): ESP32-C3 SuperMini + 2x TOF200C (I2C) + 18650</text>
 <polyline points="80,160 80,186" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
 <polyline points="64,186 96,186" fill="none" stroke="#222" stroke-width="3" stroke-linejoin="round"/>
 <polyline points="71,194 89,194" fill="none" stroke="#222" stroke-width="3" stroke-linejoin="round"/>
@@ -106,90 +106,71 @@
 <polyline points="948,262 972,262" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
 <polyline points="952,266 968,266" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
 <polyline points="956,270 964,270" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1185" y="108" font-size="13" text-anchor="middle" fill="#222" font-weight="bold" font-style="normal">Pulldowns: TRIG im Deep Sleep sicher LOW</text>
-<polyline points="1070,150 1110,150" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="1064" y="155" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">TRIG1</text>
-<polyline points="1110,150 1110,180.0" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1110,220.0 1110,250" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<rect x="1103" y="180.0" width="14" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
-<text x="1122" y="198.0" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">R5</text>
-<text x="1122" y="214.0" font-size="13" text-anchor="start" fill="#222" font-weight="bold" font-style="normal">120k</text>
-<polyline points="1110,250 1110,262" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1098,262 1122,262" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1102,266 1118,266" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1106,270 1114,270" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1220,150 1260,150" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="1214" y="155" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">TRIG2</text>
-<polyline points="1260,150 1260,180.0" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1260,220.0 1260,250" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<rect x="1253" y="180.0" width="14" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
-<text x="1272" y="198.0" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">R6</text>
-<text x="1272" y="214.0" font-size="13" text-anchor="start" fill="#222" font-weight="bold" font-style="normal">120k</text>
-<polyline points="1260,250 1260,262" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1248,262 1272,262" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1252,266 1268,266" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1256,270 1264,270" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<rect x="1080" y="330" width="200" height="150" rx="6" fill="#f6f8fb" stroke="#222" stroke-width="2"/>
-<text x="1180.0" y="352" font-size="15" text-anchor="middle" fill="#222" font-weight="bold" font-style="normal">JSN-SR04T #1</text>
-<text x="1180.0" y="370" font-size="12" text-anchor="middle" fill="#555" font-weight="normal" font-style="normal">V3.0, Modus 4 (360k)</text>
-<polyline points="1080,390 1060,390" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="395" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">1 VCC</text>
-<polyline points="1080,415 1060,415" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="420" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">2 TRIG</text>
-<polyline points="1080,440 1060,440" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="445" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">3 ECHO</text>
-<polyline points="1080,465 1060,465" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="470" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">4 GND</text>
-<polyline points="1060,390 1010,390" fill="none" stroke="#c0392b" stroke-width="2" stroke-linejoin="round"/>
-<text x="1004" y="395" font-size="14" text-anchor="end" fill="#c0392b" font-weight="bold" font-style="normal">3V3</text>
-<polyline points="1060,465 1040,465" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1040,465 1040,477" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1028,477 1052,477" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1032,481 1048,481" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1036,485 1044,485" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="840,415 860,415" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="832" y="420" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO6</text>
-<polyline points="860,415 1060,415" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="920.0" y="410" font-size="12" text-anchor="middle" fill="#1f5fae" font-weight="bold" font-style="normal">TRIG1</text>
-<polyline points="840,440 860,440" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="832" y="445" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO7</text>
-<polyline points="860,440 1060,440" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="920.0" y="435" font-size="12" text-anchor="middle" fill="#1f5fae" font-weight="bold" font-style="normal">ECHO1</text>
-<text x="1290" y="430" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Wandler-</text>
-<text x="1290" y="444" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">kabel 2,5 m</text>
-<rect x="1080" y="510" width="200" height="150" rx="6" fill="#f6f8fb" stroke="#222" stroke-width="2"/>
-<text x="1180.0" y="532" font-size="15" text-anchor="middle" fill="#222" font-weight="bold" font-style="normal">JSN-SR04T #2</text>
-<text x="1180.0" y="550" font-size="12" text-anchor="middle" fill="#555" font-weight="normal" font-style="normal">V3.0, Modus 4 (360k)</text>
-<polyline points="1080,570 1060,570" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="575" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">1 VCC</text>
-<polyline points="1080,595 1060,595" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="600" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">2 TRIG</text>
-<polyline points="1080,620 1060,620" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="625" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">3 ECHO</text>
-<polyline points="1080,645 1060,645" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="1088" y="650" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">4 GND</text>
-<polyline points="1060,570 1010,570" fill="none" stroke="#c0392b" stroke-width="2" stroke-linejoin="round"/>
-<text x="1004" y="575" font-size="14" text-anchor="end" fill="#c0392b" font-weight="bold" font-style="normal">3V3</text>
-<polyline points="1060,645 1040,645" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1040,645 1040,657" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1028,657 1052,657" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1032,661 1048,661" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="1036,665 1044,665" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<polyline points="840,595 860,595" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="832" y="600" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO20</text>
-<polyline points="860,595 1060,595" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="920.0" y="590" font-size="12" text-anchor="middle" fill="#1f5fae" font-weight="bold" font-style="normal">TRIG2</text>
-<polyline points="840,620 860,620" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
-<text x="832" y="625" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO10</text>
-<polyline points="860,620 1060,620" fill="none" stroke="#1f5fae" stroke-width="2" stroke-linejoin="round"/>
-<text x="920.0" y="615" font-size="12" text-anchor="middle" fill="#1f5fae" font-weight="bold" font-style="normal">ECHO2</text>
-<text x="1290" y="610" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Wandler-</text>
-<text x="1290" y="624" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">kabel 2,5 m</text>
-<rect x="30" y="600" width="560" height="162" rx="6" fill="#fffbea" stroke="#d4b106"/>
-<text x="44" y="625" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Netzlabels mit gleichem Namen sind verbunden (3V3, TRIG1, TRIG2).</text>
-<text x="44" y="647" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Sensoren dauerhaft an 3,3 V, JSN im Low-Power-Modus 4: &lt; 70 µA je Sensor.</text>
-<text x="44" y="669" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Modus 4: 360 kΩ (z. B. 3 × 120 kΩ in Reihe) auf das Lötfeld „Mode“ löten.</text>
-<text x="44" y="691" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Kein Boost-Wandler, keine Pegelteiler, keine Abschaltung nötig.</text>
-<text x="44" y="713" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Sensoren nacheinander messen (Übersprechen).</text>
-<text x="44" y="735" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• R1/R2/C1 Akkumessung 1:2: 3,0–4,2 V → 1,5–2,1 V an GPIO1, ca. 2 µA Dauerstrom.</text>
+<polyline points="840,300 860,300" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="832" y="305" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO6</text>
+<text x="866" y="305" font-size="14" text-anchor="start" fill="#1f5fae" font-weight="bold" font-style="normal">SDA</text>
+<polyline points="840,330 860,330" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="832" y="335" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO7</text>
+<text x="866" y="335" font-size="14" text-anchor="start" fill="#1f5fae" font-weight="bold" font-style="normal">SCL</text>
+<polyline points="840,360 860,360" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="832" y="365" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO5</text>
+<text x="866" y="365" font-size="14" text-anchor="start" fill="#1f5fae" font-weight="bold" font-style="normal">XSHUT1</text>
+<polyline points="840,390 860,390" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="832" y="395" font-size="13" text-anchor="end" fill="#222" font-weight="normal" font-style="normal">GPIO10</text>
+<text x="866" y="395" font-size="14" text-anchor="start" fill="#1f5fae" font-weight="bold" font-style="normal">XSHUT2</text>
+<rect x="1080" y="300" width="200" height="150" rx="6" fill="#f6f8fb" stroke="#222" stroke-width="2"/>
+<text x="1180.0" y="322" font-size="15" text-anchor="middle" fill="#222" font-weight="bold" font-style="normal">TOF200C #1</text>
+<text x="1180.0" y="340" font-size="12" text-anchor="middle" fill="#555" font-weight="normal" font-style="normal">VL53L0X, 2 m, I2C</text>
+<polyline points="1080,360 1060,360" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="365" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">VIN</text>
+<text x="1054" y="365" font-size="14" text-anchor="end" fill="#c0392b" font-weight="bold" font-style="normal">3V3</text>
+<polyline points="1080,382 1060,382" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="387" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">SDA</text>
+<text x="1054" y="387" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">SDA</text>
+<polyline points="1080,404 1060,404" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="409" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">SCL</text>
+<text x="1054" y="409" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">SCL</text>
+<polyline points="1080,426 1060,426" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="431" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">XSHUT</text>
+<text x="1054" y="431" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">XSHUT1</text>
+<polyline points="1080,448 1060,448" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="453" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">GND</text>
+<polyline points="1060,448 1040,448" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1040,448 1040,460" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1028,460 1052,460" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1032,464 1048,464" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1036,468 1044,468" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1290" y="400" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Adresse nach</text>
+<text x="1290" y="414" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Start: 0x30</text>
+<rect x="1080" y="500" width="200" height="150" rx="6" fill="#f6f8fb" stroke="#222" stroke-width="2"/>
+<text x="1180.0" y="522" font-size="15" text-anchor="middle" fill="#222" font-weight="bold" font-style="normal">TOF200C #2</text>
+<text x="1180.0" y="540" font-size="12" text-anchor="middle" fill="#555" font-weight="normal" font-style="normal">VL53L0X, 2 m, I2C</text>
+<polyline points="1080,560 1060,560" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="565" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">VIN</text>
+<text x="1054" y="565" font-size="14" text-anchor="end" fill="#c0392b" font-weight="bold" font-style="normal">3V3</text>
+<polyline points="1080,582 1060,582" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="587" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">SDA</text>
+<text x="1054" y="587" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">SDA</text>
+<polyline points="1080,604 1060,604" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="609" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">SCL</text>
+<text x="1054" y="609" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">SCL</text>
+<polyline points="1080,626 1060,626" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="631" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">XSHUT</text>
+<text x="1054" y="631" font-size="14" text-anchor="end" fill="#1f5fae" font-weight="bold" font-style="normal">XSHUT2</text>
+<polyline points="1080,648 1060,648" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1088" y="653" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">GND</text>
+<polyline points="1060,648 1040,648" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1040,648 1040,660" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1028,660 1052,660" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1032,664 1048,664" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="1036,668 1044,668" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="1290" y="600" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Adresse nach</text>
+<text x="1290" y="614" font-size="12" text-anchor="start" fill="#555" font-weight="normal" font-style="normal">Start: 0x31</text>
+<rect x="30" y="705" width="1000" height="162" rx="6" fill="#fffbea" stroke="#d4b106"/>
+<text x="44" y="730" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Netzlabels mit gleichem Namen sind verbunden (3V3, SDA, SCL, XSHUT1/2).</text>
+<text x="44" y="752" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Beide ToF-Module hängen dauerhaft an 3,3 V und teilen sich den I2C-Bus.</text>
+<text x="44" y="774" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• XSHUT = Enable je Board: beide starten mit 0x29, ESPHome weckt sie einzeln und stellt 0x30/0x31 ein.</text>
+<text x="44" y="796" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• SDA/SCL-Pull-ups sind auf den Modulen (sonst 4,7 kΩ nach 3V3 ergänzen).</text>
+<text x="44" y="818" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• Kein Boost-Wandler, keine Pegelteiler, keine Abschaltung nötig.</text>
+<text x="44" y="840" font-size="13" text-anchor="start" fill="#222" font-weight="normal" font-style="normal">• R1/R2/C1 Akkumessung 1:2: 3,0–4,2 V → 1,5–2,1 V an GPIO1, ca. 2 µA Dauerstrom.</text>
 </svg>

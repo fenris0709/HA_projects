@@ -2,7 +2,7 @@
 """Erzeugt schema_prototyp.svg (Schaltplan Lochraster-Prototyp). Aufruf: python gen_schema.py"""
 import os
 
-W, H = 1400, 860
+W, H = 1400, 880
 out = []
 INK, PWR, SIG, GNDC = "#222", "#c0392b", "#1f5fae", "#222"
 
@@ -92,7 +92,7 @@ def pin(x, y, name, side, length=20):
 
 # ---------------- Hintergrund + Titel ----------------
 e(f'<rect width="{W}" height="{H}" fill="#ffffff"/>')
-text(30, 40, "Tankmonitor Prototyp (Streifenraster): ESP32-C3 SuperMini + 2x JSN-SR04T V3.0 + 18650", 20, weight="bold")
+text(30, 40, "Tankmonitor Prototyp (Streifenraster): ESP32-C3 SuperMini + 2x TOF200C (I2C) + 18650", 20, weight="bold")
 
 # ---------------- Akku + Lader ----------------
 bx = 80
@@ -164,56 +164,52 @@ pin(ESP_X, 440, "GPIO1 (ADC)", "left")
 text(ESP_X + ESP_W / 2, ESP_Y + ESP_H - 36, "USB-C am ESP:", 12, "middle", PWR, "bold")
 text(ESP_X + ESP_W / 2, ESP_Y + ESP_H - 20, "nur mit SW1 AUS!", 12, "middle", PWR, "bold")
 
-# ---------------- Stuetzkondensator + TRIG-Pulldowns ----------------
+# ---------------- Stuetzkondensator ----------------
 RAIL_Y = 150
 line((900, RAIL_Y), (960, RAIL_Y), c=PWR)
 label(900, RAIL_Y, "3V3", "left", PWR)
 cap_v(960, RAIL_Y, 250, "C2", "1µF", polar=True)
 gnd(960, 250)
-text(1185, 108, "Pulldowns: TRIG im Deep Sleep sicher LOW", 13, "middle", weight="bold")
-for x, net, ref in ((1110, "TRIG1", "R5"), (1260, "TRIG2", "R6")):
-    line((x - 40, RAIL_Y), (x, RAIL_Y), c=SIG)
-    label(x - 40, RAIL_Y, net, "left")
-    res_v(x, RAIL_Y, 250, ref, "120k")
-    gnd(x, 250)
 
-# ---------------- JSN-SR04T ----------------
+# ---------------- ESP-Pins zu den Sensoren (Netzlabels) ----------------
+for y, gp, net in ((300, "GPIO6", "SDA"), (330, "GPIO7", "SCL"), (360, "GPIO5", "XSHUT1"), (390, "GPIO10", "XSHUT2")):
+    ex, _ = pin(ESP_X + ESP_W, y, gp, "right")
+    label(ex, y, net, "right")
+
+# ---------------- TOF200C (VL53L0X) ----------------
 JX, JW = 1080, 200
 
 
-def jsn(y, n, trig_gpio, echo_gpio):
-    box(JX, y, JW, 150, f"JSN-SR04T #{n}", "V3.0, Modus 4 (360k)")
-    p1 = pin(JX, y + 60, "1 VCC", "left", 20)
-    p2 = pin(JX, y + 85, "2 TRIG", "left", 20)
-    p3 = pin(JX, y + 110, "3 ECHO", "left", 20)
-    p4 = pin(JX, y + 135, "4 GND", "left", 20)
-    line(p1, (JX - 70, y + 60), c=PWR)
-    label(JX - 70, y + 60, "3V3", "left", PWR)
-    line(p4, (JX - 40, y + 135))
-    gnd(JX - 40, y + 135)
-    for pp, (gp, name) in ((p2, trig_gpio), (p3, echo_gpio)):
-        ex, _ = pin(ESP_X + ESP_W, pp[1], gp, "right")
-        line((ex, pp[1]), pp, c=SIG)
-        text((ex + pp[0]) / 2 - 40, pp[1] - 5, name, 12, "middle", SIG, "bold")
-    text(JX + JW + 10, y + 100, "Wandler-", 12, c="#555")
-    text(JX + JW + 10, y + 114, "kabel 2,5 m", 12, c="#555")
+def tof(y, n, xshut):
+    box(JX, y, JW, 150, f"TOF200C #{n}", "VL53L0X, 2 m, I2C")
+    for i, (name, net, c) in enumerate((("VIN", "3V3", PWR), ("SDA", "SDA", SIG), ("SCL", "SCL", SIG),
+                                         ("XSHUT", xshut, SIG))):
+        py = y + 60 + i * 22
+        p = pin(JX, py, name, "left", 20)
+        label(p[0], py, net, "left", c)
+    py = y + 60 + 4 * 22
+    p = pin(JX, py, "GND", "left", 20)
+    line(p, (JX - 40, py))
+    gnd(JX - 40, py)
+    text(JX + JW + 10, y + 100, "Adresse nach", 12, c="#555")
+    text(JX + JW + 10, y + 114, f"Start: 0x{0x2f + n:02x}", 12, c="#555")
 
 
-jsn(330, 1, ("GPIO6", "TRIG1"), ("GPIO7", "ECHO1"))
-jsn(510, 2, ("GPIO20", "TRIG2"), ("GPIO10", "ECHO2"))
+tof(300, 1, "XSHUT1")
+tof(500, 2, "XSHUT2")
 
 # ---------------- Hinweise ----------------
 notes = [
-    "Netzlabels mit gleichem Namen sind verbunden (3V3, TRIG1, TRIG2).",
-    "Sensoren dauerhaft an 3,3 V, JSN im Low-Power-Modus 4: < 70 µA je Sensor.",
-    "Modus 4: 360 kΩ (z. B. 3 × 120 kΩ in Reihe) auf das Lötfeld „Mode“ löten.",
+    "Netzlabels mit gleichem Namen sind verbunden (3V3, SDA, SCL, XSHUT1/2).",
+    "Beide ToF-Module hängen dauerhaft an 3,3 V und teilen sich den I2C-Bus.",
+    "XSHUT = Enable je Board: beide starten mit 0x29, ESPHome weckt sie einzeln und stellt 0x30/0x31 ein.",
+    "SDA/SCL-Pull-ups sind auf den Modulen (sonst 4,7 kΩ nach 3V3 ergänzen).",
     "Kein Boost-Wandler, keine Pegelteiler, keine Abschaltung nötig.",
-    "Sensoren nacheinander messen (Übersprechen).",
     "R1/R2/C1 Akkumessung 1:2: 3,0–4,2 V → 1,5–2,1 V an GPIO1, ca. 2 µA Dauerstrom.",
 ]
-e(f'<rect x="30" y="600" width="560" height="{30 + 22 * len(notes)}" rx="6" fill="#fffbea" stroke="#d4b106"/>')
+e(f'<rect x="30" y="705" width="1000" height="{30 + 22 * len(notes)}" rx="6" fill="#fffbea" stroke="#d4b106"/>')
 for i, n in enumerate(notes):
-    text(44, 625 + 22 * i, "• " + n, 13)
+    text(44, 730 + 22 * i, "• " + n, 13)
 
 svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
        f'font-family="Segoe UI, Helvetica, Arial, sans-serif">\n' + "\n".join(out) + "\n</svg>\n")

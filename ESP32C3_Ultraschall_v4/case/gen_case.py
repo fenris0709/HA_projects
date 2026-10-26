@@ -1,11 +1,14 @@
-#!/usr/bin/env python3
-"""Gehaeuse fuer ESP32-C3 + 2x JSN-SR04T + 18650 als SolidCraft-Skript.
+"""Gehaeuse fuer ESP32-C3 + 2x TOF200C (VL53L0X) + 18650 als SolidCraft-Skript.
+
+Alle Platinen werden mit Heissleim eingeklebt (keine Schnappmechanismen). Positionierhilfen:
+Stifte durch die Befestigungsloecher der ToF-Boards, niedrige Rahmen, Eckauflagen.
 
 Erzeugt (im Ordner dieses Skripts):
-  gehaeuse.json            SolidCraft-Befehlsskript (Unterteil + Deckel)
+  gehaeuse.json            SolidCraft-Befehlsskript (Unterteil + Deckel + Passprobe)
   Gehaeuse.solidcraft      Design zum Oeffnen/Weiterbearbeiten in SolidCraft
   Gehaeuse_Unterteil.stl   Druckteil, Boden unten
   Gehaeuse_Deckel.stl      Druckteil, Aussenseite unten (Druckorientierung)
+  Gehaeuse_Passprobe.stl   kleines Probestueck (ToF-Stifte + TP4056 mit USB-Loch) zum Pruefen der Masse
   preview_*.png            Vorschau, mit Platzhaltern fuer die Bauteile
 Aufruf: python gen_case.py            (Pfad zur CLI unten in SC_CLI)
         python gen_case.py --no-run   (nur JSON schreiben)
@@ -13,14 +16,14 @@ Aufruf: python gen_case.py            (Pfad zur CLI unten in SC_CLI)
 Koordinaten: X = Breite, Y = Laenge, Z = Hoehe. u/v/z = Innenmass ab der inneren Ecke links vorne
 auf dem Boden. Layout (Draufsicht, Y nach oben):
 
-   +-----------------------------+
-   | [JSN #1, Stifte unten] [TP4056]=USB-C rechts
-   |                        [     ]
-   | [Lochraster/PCB]       [18650]
-   |  ESP USB-C links       [halter]
-   |                        [     ]
-   | [JSN #2, Stifte oben]  [Schalter]
-   +--Kabel #2-------------Schalter (Wand vorne)
+   +-------------------------------+
+   | [Streifenraster]   [18650-    |
+   |  ESP USB-C links    Halter,   |
+   | [ToF #1  Fenster ]  quer zur  |
+   | [ToF #2  Fenster ]  Wand      |
+   | [TP4056]  [Schalter]          |
+   +--USB-C---Schalter (Wand vorne)
+Die ToF-Boards liegen mit dem Sensor nach unten auf dem Boden, Messrichtung durch die Fenster im Boden.
 """
 import json, os, subprocess, sys
 
@@ -32,32 +35,29 @@ T = 2.0            # Wandstaerke (Schalter Einbaustaerke beachten)
 FL = 2.0           # Bodenstaerke
 HI = 30.0          # Innenhoehe
 # Gewindeeinsaetze zum Einschmelzen (True) oder selbstschneidende Schrauben (False).
-# Bohrung/Tiefe an die vorhandenen Einsaetze anpassen (Werte unten: gaengige Ruthex-Masse).
 USE_INSERTS = True
 if USE_INSERTS:
     POST = 8.0                          # Eckpfosten fuer Deckelschrauben (Kantenlaenge)
     POST_PILOT, POST_DEPTH = 4.0, 7.0   # M3-Einsatz (z. B. M3 x 5.7, Bohrung 4.0)
-    BOSS_D, BOSS_PILOT = 6.0, 3.2       # M2-Einsatz (z. B. M2 x 3, Bohrung 3.2), Dom-Durchmesser
 else:
     POST = 7.0
     POST_PILOT, POST_DEPTH = 2.5, 14.0  # M3 selbstschneidend
-    BOSS_D, BOSS_PILOT = 5.0, 1.7       # M2 selbstschneidend
 
-# JSN-SR04T V3.0 Steuerplatine (Datenblatt: 41.3 x 28.5, Loecher 4x d2 im Raster 36 x 24)
-JSN_W, JSN_L = 41.3, 28.5
-JSN_HX, JSN_HY = 36.0, 24.0
-JSN_PINS = 5.8     # Stifte ragen in der Platinenebene ueber die Kante (34.3 - 28.5)
-JSN_BOSS_H = 5.0
+# TOF200C / TOF050C Breakout (datasheets/tof200c_dimensions.md): 20 x 11, Loecher d2 im Abstand 14.4,
+# Fenster 9.6 x 5. Sensor- und Lochmitte ca. 3.3 vom Rand (aus dem Bild geschaetzt) - NACHMESSEN.
+TOF_W, TOF_H = 20.0, 11.0
+TOF_HX, TOF_HY = 14.4, 3.3         # Lochabstand, Abstand Loch-/Fenstermitte von der Fensterkante
+TOF_PCB = 1.2                      # Platinenstaerke (geschaetzt)
+TOF_PEG_D, TOF_PEG_H = 1.8, 2.0    # Positionierstift durch das Befestigungsloch
+TOF_RIM, TOF_RIM_H, TOF_C = 1.0, 1.6, 0.3   # Rahmen: Wandstaerke, Hoehe, Spiel
 
 # Streifenraster 10 x 14 Raster = 25.4 x 35.56 (Layout: ../docs/stripboard.svg), ohne Befestigungsloecher:
-# liegt auf 4 Eckauflagen, links unter zwei Leisten an der Gehaeusewand, rechts von 2 Rastzungen gehalten.
+# liegt auf 4 Eckauflagen (Platz fuer Loetstellen), Anschlaege aussen herum, mit Heissleim fixiert.
 PB_W, PB_L = 10 * 2.54, 14 * 2.54
-PB_BOSS_H = 5.0    # Hoehe der Auflagen (Platz fuer Loetstellen unter der Platine)
+PB_BOSS_H = 5.0    # Hoehe der Auflagen
 PB_T = 1.6         # Platinenstaerke
 PB_GAP = 0.3       # Spiel rund um die Platine
-CLIP_W, CLIP_T, CLIP_HOOK = 5.0, 1.2, 1.1   # Rastzunge: Breite, Dicke, Ueberstand der Nase ab Zunge
-GAP_JSN_PB = 22.0  # Dupont-Stecker (14 mm) + Kabelbogen zwischen JSN-Kante und Platine
-ESP_USB_ROW = 8    # Rasterzeile der ESP-Mitte (Zeile 0 = Kante Richtung JSN #1)
+ESP_USB_ROW = 8    # Rasterzeile der ESP-Mitte (Zeile 0 = Kante Richtung ToF-Boards, vorne)
 
 # ESP32-C3 SuperMini USB-C (Lochraster links an der Wand, ESP in Buchsenleiste)
 ESP_HDR_SPACER, ESP_PCB = 2.5, 1.0                # Kunststoffsteg der Stiftleiste am ESP, Platinenstaerke
@@ -70,18 +70,28 @@ BAT_WIRE = 5.0
 BAT_RIM = 2.0      # Hoehe Positionierrahmen
 
 # TP4056 USB-C Lader (Verkaeuferfoto: ca. 17.9 x 14.1) - VOR DEM DRUCK NACHMESSEN
+# Lange Seite (TP_L) laeuft in Y, USB-C zeigt durch die Vorderwand, Loetseite nach hinten offen.
 TP_L, TP_W = 17.9, 14.1
 TP_PLAT = 3.0      # Sockel, damit die Buchse hoch genug in der Wand sitzt
+TP_RIM, TP_RIM_H = 1.0, 1.5
 TP_USB_Z = TP_PLAT + 1.0 + 1.6
 TP_USB_W, TP_USB_H = 13.0, 7.5
+TP_WIRE = 6.0      # Platz hinter dem TP4056 fuer die Loetdraehte (B+/B-/OUT+/OUT-)
 
 # Schalter rund 20 mm (Wand vorne)
 SW_HOLE = 20.2
 SW_BODY_D, SW_DEPTH = 21.0, 25.0
 SW_Z = 15.0
 
-# Sensorkabel: U-Schlitz von oben in die Stirnwand (Stecker muss nicht durch)
-CABLE_W, CABLE_DEPTH = 6.0, 12.0
+# Sensorkappe = Blindkappe (3D-gedruckt), 1 Sensor pro Tank (2x drucken). Sie wird ueber den Gewindestutzen des
+# Tanks gestuelpt (Stutzen aussen 100 mm, innen ca. 80 mm). Das ToF-Board klebt mit der Rueckseite mittig an der
+# Innenseite der Kappenplatte, der Sensor schaut offen nach unten durch den Stutzen in den Tank.
+# Gedruckt wird die Kappe mit der Platte unten auf dem Bett (Oeffnung nach oben).
+CAP_ID, CAP_H, CAP_T = 102.0, 30.0, 3.0    # Innendurchmesser (Stutzen 100 + 1 mm Spiel je Seite), Tiefe ueber der Platte, Wand
+
+# Sensorkabel (je Sensor 1, z. B. Cat5/6, 1-2 m): U-Schlitz von oben in die Wand, Stecker muss nicht durch
+CABLE_W, CABLE_DEPTH = 10.0, 12.0
+CABLE_U = POST + 1.0 + CABLE_W / 2         # Schlitz hinten im Hauptgehaeuse neben dem Eckpfosten
 
 # Deckel
 LID_T, LIP_T, LIP_H, LIP_GAP = 2.0, 1.5, 4.0, 0.3
@@ -89,32 +99,29 @@ LID_HOLE = 3.4
 EAR_W, EAR_L, EAR_T, EAR_HOLE = 16.0, 10.0, 3.0, 4.5   # Laschen zur Wandmontage
 C = 0.5            # allgemeines Spiel
 
-# ---------------- Layout ----------------
-COL_A_W = max(JSN_W, PB_W) + 0.8
-A_U0 = 1.0
-B_U0 = A_U0 + COL_A_W + 3.0
+# ---------------- Layout Hauptgehaeuse ----------------
+# Spalte A (links): Schalter in der Vorderwand, TP4056 (USB-C links), Streifenraster (hinten, Kabelschlitz hinten)
+# Spalte B (rechts): Akkuhalter
 END = POST + 1.0                        # Abstand Bauteile <-> Stirnwand (Eckpfosten)
-
-JSN2_V = END
-PB_V = JSN2_V + JSN_L + GAP_JSN_PB
-JSN1_V = PB_V + PB_L + GAP_JSN_PB
-LI = round(JSN1_V + JSN_L + END, 1)
-
-SW_U = B_U0 + SW_BODY_D / 2 + 0.5
-WI = round(max(SW_U + SW_BODY_D / 2 + POST + 0.5, B_U0 + BAT_W + 2 * 1.2 + 2 * C + 2.0), 1)
-BAT_U = SW_U - BAT_W / 2
-BAT_V = SW_DEPTH + 1.0 + BAT_WIRE
-TP_U = WI - 1.0 - TP_L
-TP_V = LI - END - TP_W - 1.0
-A_UC = A_U0 + COL_A_W / 2
-JSN_U = A_UC - JSN_W / 2
 PB_U = PB_GAP                           # Platine links an der Wand (USB-C des ESP)
+
+SW_U = POST + 0.5 + SW_BODY_D / 2       # Schalter neben dem Eckpfosten
+TP_U = 0.5                              # TP4056 an der linken Wand, USB-C zeigt nach links
+TP_V = SW_DEPTH + 2.0
+PB_V = TP_V + TP_W + 2 * (C + TP_RIM) + 3.0
+BAT_RIMW = 1.2
+B_U0 = max(SW_U + SW_BODY_D / 2, PB_U + PB_W + 1.5) + 3.0
+BAT_U = B_U0 + C + BAT_RIMW
+BAT_V = BAT_WIRE + C + BAT_RIMW
+WI = round(BAT_U + BAT_W + C + BAT_RIMW + POST + 0.3, 1)
+LI = round(max(PB_V + PB_L + END, BAT_V + BAT_L + C + BAT_RIMW + BAT_WIRE), 1)
 
 WO, LO, HO = WI + 2 * T, LI + 2 * T, HI + FL
 
 
-def P(u, v, z=0.0):
-    return [round(T + u, 3), round(T + v, 3), round(FL + z, 3)]
+def P(u, v, z=0.0, org=None):
+    ox, oy = org or (T, T)
+    return [round(ox + u, 3), round(oy + v, 3), round(FL + z, 3)]
 
 
 cmds = []
@@ -137,13 +144,41 @@ def cyl(base, d, h, axis="Z", op="cut", target="Unterteil"):
     cmd("solid.cylinder", diameter=d, height=round(h, 3), base=base, axis=axis, operation=op, targets=[target])
 
 
-def slot_x(side, v, z, w, h):
-    """Langloch (Breite w entlang Y, Hoehe h, Mitte v/z absolut) durch die linke (side=0) oder rechte Wand."""
-    x0 = -1 if side == 0 else WO - T - 1
+def slot_x(x0, v, z, w, h, target="Unterteil"):
+    """Langloch (Breite w entlang Y, Hoehe h, Mitte v/z absolut) durch eine Wand in X-Richtung ab x0."""
     r = h / 2
-    box(None, [x0, v - (w - h) / 2, z - r], [T + 2, w - h, h], "cut")
+    box(None, [x0, v - (w - h) / 2, z - r], [T + 2, w - h, h], "cut", target)
     for dv in (-(w - h) / 2, (w - h) / 2):
-        cyl([x0, v + dv, z], h, T + 2, "X")
+        cyl([x0, v + dv, z], h, T + 2, "X", target=target)
+
+
+def u_slot(x, y0, ztop, w, depth, target):
+    """U-Schlitz von oben in eine Wand in Y-Richtung (Kabel muss nicht durchgefaedelt werden)."""
+    zc = ztop - depth + w / 2
+    box(None, [x - w / 2, y0, zc], [w, T + 4, depth - w / 2 + 1], "cut", target)
+    cyl([x, y0, zc], w - 0.02, T + 4, "Y", target=target)   # minimal schmaler: Tangente an der Boxkante schlaegt sonst fehl
+
+
+# ---- Montagestrukturen (fuer Unterteil, Sensorgehaeuse und Passprobe gleich; org = absoluter Ursprung) ----
+def tof_join(uc, v, org, target):
+    """Stifte durch die Befestigungsloecher und Rahmen an der Fensterseite und links/rechts (Pinseite offen)."""
+    for du in (-TOF_HX / 2, TOF_HX / 2):
+        cyl(P(uc + du, v + TOF_HY, -0.5, org), TOF_PEG_D, TOF_PEG_H + 0.5, op="join", target=target)
+    u0, u1 = uc - TOF_W / 2 - TOF_C - TOF_RIM, uc + TOF_W / 2 + TOF_C
+    box(None, P(u0, v - TOF_C - TOF_RIM, -0.5, org), [u1 - u0 + TOF_RIM, TOF_RIM, TOF_RIM_H + 0.5], "join", target)
+    for ux in (u0, u1):
+        box(None, P(ux, v - TOF_C - TOF_RIM, -0.5, org), [TOF_RIM, TOF_H * 0.6 + TOF_C + TOF_RIM, TOF_RIM_H + 0.5],
+            "join", target)
+
+
+def tp_join(u0, v0, org, target):
+    """TP4056 (USB-C links an der Wand): Sockel mit Rahmen vorne/hinten, Loetseite nach rechts offen."""
+    ul = u0 + TP_L
+    pv0 = v0 - C - TP_RIM
+    pw = TP_W + 2 * C + 2 * TP_RIM
+    box(None, P(0, pv0, 0, org), [ul, pw, TP_PLAT], "join", target)
+    for vy in (pv0, pv0 + pw - TP_RIM):
+        box(None, P(0, vy, TP_PLAT, org), [ul, TP_RIM, TP_RIM_H], "join", target)
 
 
 # ---------------- Unterteil ----------------
@@ -158,46 +193,26 @@ for (u, v) in POSTS:
     box(None, P(u, v), [POST, POST, HI], "join")
     cyl(P(u + POST / 2, v + POST / 2, HI - POST_DEPTH), POST_PILOT, POST_DEPTH + 1)
 
+# Wanddurchbrueche (vor den Aufbauten schneiden: SolidCraft-Kern ist reihenfolgeempfindlich)
+ESP_V = PB_V + PB_L - (ESP_USB_ROW * 2.54 + 1.27)                         # Zeile 0 liegt hinten (Kabel)
+slot_x(-1, T + ESP_V, FL + ESP_USB_Z, ESP_USB_W, ESP_USB_H)                # ESP USB-C links
+slot_x(-1, T + TP_V + TP_W / 2, FL + TP_USB_Z, TP_USB_W, TP_USB_H)         # TP4056 USB-C links
+cyl([round(T + SW_U, 3), -1, round(FL + SW_Z, 3)], SW_HOLE, T + 2, "Y")    # Schalter vorne
+u_slot(T + CABLE_U, LO - T - 1, HO, CABLE_W, CABLE_DEPTH, "Unterteil")     # Sensorkabel hinten
 
-def bosses(u0, v0, dx, dy, h, d=None, pilot=None):
-    for du in (0, dx):
-        for dv in (0, dy):
-            cyl(P(u0 + du, v0 + dv), d or BOSS_D, h, op="join")
-            cyl(P(u0 + du, v0 + dv, 0.5), pilot or BOSS_PILOT, h)
-
-
-# Wanddurchbrueche (vor den Domen schneiden: SolidCraft-Kern ist reihenfolgeempfindlich)
-ESP_V = PB_V + PB_L - (ESP_USB_ROW * 2.54 + 1.27)                   # Zeile 0 liegt oben (JSN #1)
-slot_x(0, T + ESP_V, FL + ESP_USB_Z, ESP_USB_W, ESP_USB_H)            # ESP USB-C links
-cyl([round(T + SW_U, 3), -1, round(FL + SW_Z, 3)], SW_HOLE, T + 2, "Y")  # Schalter vorne
-for vwall in (-1, LO - T - 1):                                         # Kabelschlitze vorne/hinten
-    box(None, [T + A_UC - CABLE_W / 2, vwall, HO - CABLE_DEPTH + CABLE_W / 2], [CABLE_W, T + 2, CABLE_DEPTH], "cut")
-    cyl([T + A_UC, vwall, HO - CABLE_DEPTH + CABLE_W / 2], CABLE_W, T + 2, "Y")
-
-
-# JSN-Dome (Lochbild symmetrisch, Drehung egal)
-for v in (JSN2_V, JSN1_V):
-    bosses(JSN_U + (JSN_W - JSN_HX) / 2, v + (JSN_L - JSN_HY) / 2, JSN_HX, JSN_HY, JSN_BOSS_H)
-# Lochraster / spaeteres PCB
-# Streifenraster: Eckauflagen, Anschlaege oben/unten, Leisten links, Rastzungen rechts
+# Streifenraster: Eckauflagen (Loetstellen frei), Anschlaege aussen herum, links die Wand
 PB_TOP = PB_BOSS_H + PB_T
-for (u, v) in ((PB_U + 11.6, PB_V), (PB_U + PB_W - 2.2, PB_V), (PB_U, PB_V + PB_L - 2.2), (PB_U + PB_W - 2.2, PB_V + PB_L - 2.2)):
+for (u, v) in ((PB_U + 11.6, PB_V), (PB_U + PB_W - 2.2, PB_V),
+               (PB_U, PB_V + PB_L - 2.2), (PB_U + PB_W - 2.2, PB_V + PB_L - 2.2)):
     box(None, P(u, v), [2.2, 2.2, PB_BOSS_H], "join")
-for col in (0.5, 9):                    # Anschlaege an freien Randloechern (oben: Spalte 0/1 und 9, unten: 6/7 und 9)
-    box(None, P(PB_U + col * 2.54 - 0.4, PB_V + PB_L + PB_GAP), [3, 1.2, PB_TOP + 1.0], "join")
-for col in (6.5, 9):
-    box(None, P(PB_U + col * 2.54 - 0.4, PB_V - PB_GAP - 1.2), [3, 1.2, PB_TOP + 1.0], "join")
-for (v0, v1) in ((PB_V + PB_L - 6.5, PB_V + PB_L - 1.0), (PB_V + 8.0, PB_V + 12.5)):   # Leisten links (frei von J3/Draehten)
-    box(None, P(-0.3, v0, PB_TOP + 0.15), [PB_U + 1.0, v1 - v0, 1.4], "join")   # 0,3 mm in die Wand
-for v in (PB_V + PB_L * 0.3, PB_V + PB_L * 0.7):                                 # Rastzungen rechts
-    ux = PB_U + PB_W + PB_GAP
-    box(None, P(ux, v - CLIP_W / 2), [CLIP_T, CLIP_W, PB_TOP + 0.15 + 1.6], "join")
-    for k in range(3):   # Nase: unten volle Ueberdeckung, oben schraeg (Einfuehrschraege in 3 Stufen)
-        o = CLIP_HOOK * (3 - k) / 3
-        box(None, P(ux - o, v - CLIP_W / 2, PB_TOP + 0.15 + 0.4 * k), [o + 0.3, CLIP_W, 0.4], "join")
+for v in (PB_V - PB_GAP - 1.2, PB_V + PB_L + PB_GAP):          # vorne/hinten
+    for u in (PB_U, PB_U + PB_W - 4.0):
+        box(None, P(u, v), [4.0, 1.2, PB_TOP + 1.0], "join")
+for v in (PB_V, PB_V + PB_L - 4.0):                              # rechts
+    box(None, P(PB_U + PB_W + PB_GAP, v), [1.2, 4.0, PB_TOP + 1.0], "join")
 
 # Positionierrahmen 18650-Halter (Enden offen fuer Draehte)
-rim = 1.2
+rim = BAT_RIMW
 bx0, by0 = BAT_U - C - rim, BAT_V - C - rim
 bw, bl = BAT_W + 2 * C + 2 * rim, BAT_L + 2 * C + 2 * rim
 box(None, P(bx0, by0), [bw, bl, BAT_RIM], "join")
@@ -205,16 +220,13 @@ box(None, P(bx0 + rim, by0 + rim, 0), [bw - 2 * rim, bl - 2 * rim, BAT_RIM + 1],
 for v in (by0 - 0.5, by0 + bl - rim - 0.5):
     box(None, P(BAT_U + BAT_W / 2 - 5, v, 0), [10, rim + 1, BAT_RIM + 1], "cut")
 
-# TP4056-Sockel mit Tasche, offen zur Wand rechts
-tpx0, tpy0 = TP_U - C - rim, TP_V - C - rim
-box(None, P(tpx0, tpy0), [WI - tpx0, TP_W + 2 * C + 2 * rim, TP_PLAT + 1.5], "join")
-box(None, P(TP_U - C, TP_V - C, TP_PLAT), [WI - TP_U + C + 1, TP_W + 2 * C, 5], "cut")
-slot_x(1, T + TP_V + TP_W / 2, FL + TP_USB_Z, TP_USB_W, TP_USB_H)     # TP4056 USB-C rechts
+# TP4056-Sockel
+tp_join(TP_U, TP_V, (T, T), "Unterteil")
 
-# Laschen zur Wandmontage
-for (y0, yh) in ((-EAR_L, 0 - EAR_L / 2), (LO, LO + EAR_L / 2)):
-    box(None, [WO / 2 - EAR_W / 2, y0, 0], [EAR_W, EAR_L + 1, EAR_T], "join")
-    cyl([WO / 2, yh, -1], EAR_HOLE, EAR_T + 2)
+# Laschen zur Wandmontage: vorne unter dem Schalter, hinten mittig
+for (xc, y0, yh) in ((T + SW_U, -EAR_L, 0 - EAR_L / 2), (WO / 2, LO, LO + EAR_L / 2)):
+    box(None, [xc - EAR_W / 2, y0, 0], [EAR_W, EAR_L + 1, EAR_T], "join")
+    cyl([xc, yh, -1], EAR_HOLE, EAR_T + 2)
 
 # ---------------- Deckel (Druckorientierung: Aussenseite unten, neben dem Unterteil) ----------------
 LX = WO + 15.0
@@ -236,34 +248,58 @@ box(None, [mx(hi_u) + LIP_T, lo_v + LIP_T, LID_T], [hi_u - lo_u - 2 * LIP_T, hi_
 for (u, v) in POSTS:   # Ausschnitte fuer Eckpfosten
     box(None, [mx(T + u + POST + 0.5), T + v - 0.5, LID_T], [POST + 1, POST + 1, LIP_H + 1], "cut", "Deckel")
     cyl([mx(T + u + POST / 2), T + v + POST / 2, -1], LID_HOLE, LID_T + 2, op="cut", target="Deckel")
-for v in (T - 1, T + LI - 3):   # Lippe an den Kabelschlitzen offen
-    box(None, [mx(T + A_UC + CABLE_W / 2 + 1), v, LID_T], [CABLE_W + 2, 4, LIP_H + 1], "cut", "Deckel")
+box(None, [mx(T + CABLE_U + CABLE_W / 2 + 1), T + LI - 3, LID_T], [CABLE_W + 2, 4, LIP_H + 1], "cut", "Deckel")  # Lippe am Kabelschlitz offen
 
-cmd("appearance.assign", bodies=["Unterteil", "Deckel"], color="#d9d9d9")
+# ---------------- Sensorkappe: Blindkappe ueber den Tankstutzen, Sensor haengt mittig an der Plattenunterseite ----------------
+# Becher: Platte FL dick (im Einsatz oben), darauf eine Wand mit CAP_ID Innendurchmesser und CAP_H Hoehe (im Einsatz nach unten offen).
+CAP_R = CAP_ID / 2 + CAP_T
+CAPCX, CAPCY = LX + WO + 15.0 + CAP_R, CAP_R
+CAP_ORG = (CAPCX, CAPCY)
+cmd("solid.cylinder", diameter=2 * CAP_R, height=FL + CAP_H, base=[CAPCX, CAPCY, 0], axis="Z", body_name="Sensorgehaeuse")
+cyl([CAPCX, CAPCY, FL], CAP_ID, CAP_H + 1, target="Sensorgehaeuse")
+u_slot(CAPCX, CAPCY + CAP_ID / 2 - 1, FL + CAP_H, CABLE_W, CABLE_DEPTH, "Sensorgehaeuse")   # 6-adriges Kabel
+# Sensor genau in der Mitte, Pinseite des Boards zeigt zum Kabelschlitz (+Y). Das Board liegt mit der Rueckseite auf
+# der Platte (Stifte durch die Befestigungsloecher), die Sensorseite zeigt zur Oeffnung, also im Einsatz nach unten.
+TOF_V0 = -TOF_HY
+tof_join(0.0, TOF_V0, CAP_ORG, "Sensorgehaeuse")
+
+# ---------------- Passprobe: Probedruck zum Pruefen der Masse, bevor das ganze Gehaeuse gedruckt wird ----------------
+# Enthaelt den TP4056-Sockel mit USB-C-Loch in der Wand und die ToF-Stifte mit Rahmen.
+CX = CAPCX + CAP_R + 15.0
+PP_V = 3.0 + TP_RIM + C                  # TP4056 ab hier in Y
+PP_UC = TP_U + TP_L + 4.0 + TOF_W / 2 + TOF_C + TOF_RIM
+PP_W = T + PP_UC + TOF_W / 2 + 4.0
+PP_L = PP_V + TP_W + C + TP_RIM + 3.0
+PP_ORG = (CX + T, 0)                     # Innenecke an der Wand
+cmd("solid.box", length=round(PP_W, 3), width=round(PP_L, 3), height=FL, corner=[CX, 0, 0], body_name="Passprobe")
+box(None, [CX, 0, FL], [T, PP_L, 14.0], "join", "Passprobe")
+slot_x(CX - 1, PP_V + TP_W / 2, FL + TP_USB_Z, TP_USB_W, TP_USB_H, "Passprobe")
+tp_join(TP_U, PP_V, PP_ORG, "Passprobe")
+tof_join(PP_UC, 4.0, PP_ORG, "Passprobe")
+
+cmd("appearance.assign", bodies=["Unterteil", "Deckel", "Sensorgehaeuse", "Passprobe"], color="#d9d9d9")
+
 UNTER_CMDS = len(cmds)
 
 # ---------------- Platzhalter (nur fuer Vorschau / Kollisionspruefung) ----------------
 PH = []
 
 
-def ph(name, uvz, size, color):
+def ph(name, corner, size, color):
     cmd("solid.box", length=round(size[0], 3), width=round(size[1], 3), height=round(size[2], 3),
-        corner=P(*uvz), body_name=name)
+        corner=corner, body_name=name)
     cmd("appearance.assign", bodies=[name], color=color, opacity=0.85)
     PH.append(name)
 
 
-ph("JSN2", (JSN_U, JSN2_V, JSN_BOSS_H), (JSN_W, JSN_L, 12), "#2a5db0")
-ph("JSN2_Stifte", (A_UC - 5, JSN2_V + JSN_L, JSN_BOSS_H + 1.6), (10, JSN_PINS, 2.5), "#c9a227")
-ph("JSN1", (JSN_U, JSN1_V, JSN_BOSS_H), (JSN_W, JSN_L, 12), "#2a5db0")
-ph("JSN1_Stifte", (A_UC - 5, JSN1_V - JSN_PINS, JSN_BOSS_H + 1.6), (10, JSN_PINS, 2.5), "#c9a227")
-ph("Streifenraster", (PB_U, PB_V, PB_BOSS_H), (PB_W, PB_L, PB_T), "#b07a3c")
-ph("ESP32C3", (PB_U + 0.3, ESP_V - 9, PB_BOSS_H + PB_T + 8.5 + ESP_HDR_SPACER), (22.5, 18, 4.5), "#333333")
-ph("Akkuhalter", (BAT_U, BAT_V, 0), (BAT_W, BAT_L, BAT_H), "#202020")
-ph("TP4056", (TP_U, TP_V, TP_PLAT), (TP_L, TP_W, 4.2), "#1a1a1a")
+ph("Streifenraster", P(PB_U, PB_V, PB_BOSS_H), (PB_W, PB_L, PB_T), "#b07a3c")
+ph("ESP32C3", P(PB_U + 0.3, ESP_V - 9, PB_BOSS_H + PB_T + 8.5 + ESP_HDR_SPACER), (22.5, 18, 4.5), "#333333")
+ph("Akkuhalter", P(BAT_U, BAT_V, 0), (BAT_W, BAT_L, BAT_H), "#202020")
+ph("TP4056", P(TP_U, TP_V, TP_PLAT), (TP_L, TP_W, 4.2), "#1a1a1a")
 cmd("solid.cylinder", diameter=SW_BODY_D, height=SW_DEPTH, base=P(SW_U, 0, SW_Z), axis="Y", body_name="Schalter")
 cmd("appearance.assign", bodies=["Schalter"], color="#aa2222", opacity=0.85)
 PH.append("Schalter")
+ph("ToF", P(-TOF_W / 2, TOF_V0, 0, CAP_ORG), (TOF_W, TOF_H, TOF_PCB), "#2a5db0")
 
 
 def write_and_run():
@@ -273,12 +309,19 @@ def write_and_run():
     jsa = os.path.join(HERE, "gehaeuse_mit_bauteilen.json")
     json.dump(unter, open(js, "w"), indent=1)
     json.dump(full, open(jsa, "w"), indent=1)
-    print(f"Innen {WI} x {LI} x {HI} mm, aussen {WO} x {LO} x {HO + LID_T} mm (mit Deckel)")
+    print(f"Hauptgehaeuse innen {WI} x {LI} x {HI} mm, aussen {WO} x {LO} x {HO + LID_T} mm (mit Deckel)")
+    print(f"Sensorkappe (2x drucken) innen d{CAP_ID} x {CAP_H} mm tief, aussen d{2 * CAP_R} x {FL + CAP_H} mm")
     if "--no-run" in sys.argv:
         return
-    run = lambda *a: subprocess.run([SC_CLI, *a], check=True, capture_output=True, text=True)
+    def run(*a):
+        r = subprocess.run([SC_CLI, *a], capture_output=True, text=True)
+        if r.returncode:
+            sys.exit("SolidCraft-Fehler (" + " ".join(a[:2]) + "): " + r.stdout + " " + r.stderr)
+        return r
     run("run", js, "--save", os.path.join(HERE, "Gehaeuse.solidcraft"), "--quiet")
-    for body, fn in (("Unterteil", "Gehaeuse_Unterteil.stl"), ("Deckel", "Gehaeuse_Deckel.stl")):
+    for body, fn in (("Unterteil", "Gehaeuse_Unterteil.stl"), ("Deckel", "Gehaeuse_Deckel.stl"),
+                     ("Sensorgehaeuse", "Sensorkappe.stl"),
+                     ("Passprobe", "Gehaeuse_Passprobe.stl")):
         exp = {"commands": cmds[:UNTER_CMDS] + [{"command": "file.export",
                                                   "params": {"path": os.path.join(HERE, fn), "bodies": [body]}}]}
         tmp = os.path.join(HERE, "_export.json")
@@ -294,7 +337,7 @@ def write_and_run():
     print("Kollisionen:", json.dumps(hits, indent=1) if hits else "keine")
     for view in ("iso", "top"):
         run("snapshot", jsa, "--out", os.path.join(HERE, f"preview_{view}.png"), "--view", view,
-            "--width", "1400", "--height", "1000", "--no-grid", "--no-axes")
+            "--width", "1800", "--height", "1000", "--no-grid", "--no-axes")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
-# ESPHome: ESP32-C3 SuperMini + 2x JSN-SR04T V3.0 + 18650, Deep Sleep
+# ESPHome: ESP32-C3 SuperMini + 2x TOF200C (VL53L0X, 2 m) an einem I2C-Bus + 18650, Deep Sleep
 # Hardware siehe ../README.md
 #
 # Ablauf pro Wachphase:
-#   (WLAN noch aus) je N Messungen pro Sensor, Median -> Akkuspannung
+#   (WLAN noch aus) Sensoren per XSHUT einzeln aufwecken und umadressieren (macht ESPHome)
+#   je N Messungen pro Sensor, Median -> Akkuspannung
 #   -> WLAN ein -> MQTT verbinden -> Werte (retained) publishen -> Deep Sleep
 # Home Assistant legt die Sensoren per MQTT-Discovery automatisch an.
 # OTA (Firmware-Update per WLAN): retained "ON" auf ${name}/ota_mode publishen, dann bleibt das
@@ -17,16 +18,19 @@ substitutions:
   low_bat_voltage: "3.30"        # V; darunter nur noch selten aufwachen (DW01 schuetzt erst bei ~2.4 V)
   samples: "7"                   # Messungen pro Sensor, davon der Median
 
-  # Tank 1 (JSN #1) - Abstaende in Metern ab Sensorunterkante
+  max_range: "2.0"               # m; TOF200C (VL53L0X), laengere Werte (z. B. 8.19) sind Fehlmessungen
+
+  # Tank 1 (ToF #1) - Abstaende in Metern ab Sensorunterkante
   t1_name: Tank 1
-  t1_dist_empty: "1.60"          # Abstand Sensor -> Tankboden (Fuellstand 0 %)
-  t1_dist_full: "0.30"           # Abstand Sensor -> Oberflaeche bei 100 % (mind. 0.25, Blindzone 21 cm)
-  t1_capacity: "1500"            # Liter bei 100 % (linear, gilt fuer senkrechte Waende)
-  # Tank 2 (JSN #2)
+  # Tank 163 x 70 x 200 cm (H x B x L), Oeffnung mittig in der Breite, 30 cm von der Stirnwand, 10 cm Kragen
+  t1_dist_empty: "1.50"          # Abstand Sensor -> Tankboden (Fuellstand 0 %), max. ca. 1.8
+  t1_dist_full: "0.10"           # Abstand Sensor -> Oberflaeche bei 100 % (mind. 0.05)
+  t1_capacity: "1960"            # Liter bei 100 % (linear): 0.70 m x 2.00 m x (1.50 - 0.10) m
+  # Tank 2 (ToF #2), gleicher Tank
   t2_name: Tank 2
-  t2_dist_empty: "1.60"
-  t2_dist_full: "0.30"
-  t2_capacity: "1500"
+  t2_dist_empty: "1.50"
+  t2_dist_full: "0.10"
+  t2_capacity: "1960"
 
 esphome:
   name: ${name}
@@ -85,8 +89,15 @@ globals:
   - id: buf2
     type: std::vector<float>
 
-# Sensoren haengen dauerhaft an 3V3 und laufen im Low-Power-Modus 4 (360k auf dem Mode-Loetfeld,
-# Ruhestrom < 70 uA je Sensor). 120k-Pulldowns (R5/R6) halten TRIG im Deep Sleep auf LOW.
+# Beide ToF-Sensoren haengen dauerhaft an 3V3 und teilen sich SDA/SCL. Jeder hat eine eigene XSHUT-Leitung
+# (Enable): damit weckt ESPHome sie nacheinander auf und gibt ihnen verschiedene Adressen
+# (beide starten mit 0x29). Im Deep Sleep floatet XSHUT, die Module ziehen es per Pull-up hoch (Standby).
+
+i2c:
+  sda: GPIO6
+  scl: GPIO7
+  frequency: 50kHz               # ESPHome-Standard, nicht schneller: 1-2 m Kabel je Sensor brauchen langsame Flanken
+  scan: false
 
 text_sensor:
   # OTA-Modus: retained Nachricht "ON"/"OFF" auf ${name}/ota_mode (z. B. MQTT-Schalter in HA)
@@ -97,26 +108,26 @@ text_sensor:
 
 sensor:
   # Rohmessungen, nur intern; jeder Wert landet im Puffer, der Median wird unten berechnet
-  - platform: ultrasonic
-    id: us1
-    trigger_pin: GPIO6
-    echo_pin: GPIO7
-    pulse_time: 20us             # JSN braucht > 10 us
-    timeout: 4m
+  - platform: vl53l0x
+    id: tof1
+    address: 0x30
+    enable_pin: GPIO5            # XSHUT Sensor 1
+    long_range: true             # bis ca. 2 m, dafuer etwas mehr Rauschen
+    timeout: 200ms
     update_interval: never
     internal: true
     on_value:
-      - lambda: if (!std::isnan(x)) id(buf1).push_back(x);
-  - platform: ultrasonic
-    id: us2
-    trigger_pin: GPIO20
-    echo_pin: GPIO10
-    pulse_time: 20us
-    timeout: 4m
+      - lambda: if (!std::isnan(x) && x <= ${max_range}) id(buf1).push_back(x);
+  - platform: vl53l0x
+    id: tof2
+    address: 0x31
+    enable_pin: GPIO10           # XSHUT Sensor 2
+    long_range: true
+    timeout: 200ms
     update_interval: never
     internal: true
     on_value:
-      - lambda: if (!std::isnan(x)) id(buf2).push_back(x);
+      - lambda: if (!std::isnan(x) && x <= ${max_range}) id(buf2).push_back(x);
 
   - platform: template
     id: dist1
@@ -202,18 +213,17 @@ script:
   - id: measure_and_sleep
     mode: single
     then:
-      # 1+2) Nacheinander messen (nie gleichzeitig: Uebersprechen), >= 60 ms Abstand laut Datenblatt.
-      #      Faellt die erste Messung nach dem Aufwachen aus Modus 4 aus, verwirft der Median sie.
+      # 1+2) Nacheinander messen. Ausreisser und Fehlmessungen (Timeout, > max_range) verwirft der Median.
       - repeat:
           count: ${samples}
           then:
-            - component.update: us1
-            - delay: 100ms
+            - component.update: tof1
+            - delay: 250ms
       - repeat:
           count: ${samples}
           then:
-            - component.update: us2
-            - delay: 100ms
+            - component.update: tof2
+            - delay: 250ms
       # 3) Median und Fuellstand berechnen
       - lambda: |-
           static_assert(${t1_dist_empty} > ${t1_dist_full}, "t1_dist_empty muss groesser als t1_dist_full sein");
@@ -240,7 +250,7 @@ script:
                   id(dist1), id(level1), id(liters1));
           publish(median(id(buf2)), ${t2_dist_empty}, ${t2_dist_full}, ${t2_capacity},
                   id(dist2), id(level2), id(liters2));
-      # 4) Akku (Sensoren im Modus-4-Ruhezustand = kaum Last)
+      # 4) Akku (Sensoren sind im Leerlauf, kaum Last)
       - component.update: vbat
       - lambda: |-
           float v = id(vbat).state;

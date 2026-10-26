@@ -1,6 +1,6 @@
 # Firmware (ESPHome, MQTT)
 
-`tankmonitor.yaml` wacht stündlich auf und misst beide Tanks: je 7 Messungen, davon der Median. Dazu kommen Akku und WLAN-Signal. Die Werte gehen per MQTT (retained) an den Broker, danach schläft der ESP wieder. Home Assistant legt die Sensoren per MQTT-Discovery automatisch an.
+`tankmonitor.yaml` wacht stündlich auf und misst beide Tanks mit je einem ToF-Sensor (TOF200C, VL53L0X) am gemeinsamen I2C-Bus: je 7 Messungen, davon der Median. Dazu kommen Akku und WLAN-Signal. Die Werte gehen per MQTT (retained) an den Broker, danach schläft der ESP wieder. Home Assistant legt die Sensoren per MQTT-Discovery automatisch an.
 
 ## Einrichten
 
@@ -8,7 +8,8 @@
 2. `secrets.yaml.example` nach `secrets.yaml` kopieren und ausfüllen.
 3. Tankmaße unter `substitutions` eintragen, in Metern ab Sensor:
    - `tX_dist_empty`: Abstand Sensor → Boden
-   - `tX_dist_full`: Abstand Sensor → Oberfläche bei voll, mindestens 0,25
+   - `tX_dist_full`: Abstand Sensor → Oberfläche bei voll, mindestens 0,05
+   - Werte über `max_range` (2,0 m) gelten als Fehlmessung
    - `tX_capacity`: Liter bei voll (linear umgerechnet)
 4. Erstes Flashen per USB, **Kippschalter AUS**: `pip install esphome`, dann `esphome run tankmonitor.yaml`.
 
@@ -34,11 +35,12 @@ mqtt:
 
 ## Fehlersuche
 
-`esphome logs tankmonitor.yaml` zeigt die Zahl der gültigen Messungen. Zeigt ein Tank „unbekannt“, prüfen:
-- Verdrahtung TRIG/ECHO
-- 3,3 V am JSN
-- Abstand größer als 21 cm
-- Sensor hängt (Modus 4 hat keinen Watchdog): Kippschalter aus und wieder ein
+`esphome logs tankmonitor.yaml` zeigt die Zahl der gültigen Messungen (7 von 7 ist gut). Zeigt ein Tank „unbekannt“, prüfen:
+- Verdrahtung SDA/SCL und XSHUT des Sensors, 3,3 V am Modul
+- Beim Start müssen beide Sensoren gefunden werden (Log zeigt Adresse 0x30 und 0x31). Fehlt einer, zuerst dessen Kabel und XSHUT prüfen.
+- Abstand grösser als `max_range`, Oberfläche zu dunkel/spiegelnd, Tankwand oder Rand im Messkegel (ToF meldet das nächste Ziel)
+- Lange Kabel: gelegentlich fehlende Messungen deuten auf Störungen. Siehe Abschnitt „Kabel zu den Sensoren“ in der [Haupt-README](../README.md): 50 kHz, verdrillte Paare mit GND, Kondensator am Sensor, stärkere Pull-ups.
+- Sensor hängt: Kippschalter aus und wieder ein
 
 ## Akku
 
