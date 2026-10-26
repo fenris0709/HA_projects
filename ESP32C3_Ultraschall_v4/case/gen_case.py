@@ -8,7 +8,7 @@ Erzeugt (im Ordner dieses Skripts):
   Gehaeuse.solidcraft      Design zum Oeffnen/Weiterbearbeiten in SolidCraft
   Gehaeuse_Unterteil.stl   Druckteil, Boden unten
   Gehaeuse_Deckel.stl      Druckteil, Aussenseite unten (Druckorientierung)
-  Gehaeuse_Passprobe.stl   kleines Probestueck (ToF-Stifte + TP4056 mit USB-Loch) zum Pruefen der Masse
+  Gehaeuse_Passprobe.stl   kleines Probestueck (ToF-Fenster + TP4056 mit USB-Loch) zum Pruefen der Masse
   preview_*.png            Vorschau, mit Platzhaltern fuer die Bauteile
 Aufruf: python gen_case.py            (Pfad zur CLI unten in SC_CLI)
         python gen_case.py --no-run   (nur JSON schreiben)
@@ -47,6 +47,7 @@ else:
 # Fenster 9.6 x 5. Sensor- und Lochmitte ca. 3.3 vom Rand (aus dem Bild geschaetzt) - NACHMESSEN.
 TOF_W, TOF_H = 20.0, 11.0
 TOF_HX, TOF_HY = 14.4, 3.3         # Lochabstand, Abstand Loch-/Fenstermitte von der Fensterkante
+TOF_WIN_L, TOF_WIN_W = 10.6, 5.8   # Fensterdurchbruch (Sensor 9.6 x 5 plus Spiel)
 TOF_PCB = 1.2                      # Platinenstaerke (geschaetzt)
 TOF_PEG_D, TOF_PEG_H = 1.8, 2.0    # Positionierstift durch das Befestigungsloch
 TOF_RIM, TOF_RIM_H, TOF_C = 1.0, 1.6, 0.3   # Rahmen: Wandstaerke, Hoehe, Spiel
@@ -84,10 +85,12 @@ SW_BODY_D, SW_DEPTH = 21.0, 25.0
 SW_Z = 15.0
 
 # Sensorkappe = Blindkappe (3D-gedruckt), 1 Sensor pro Tank (2x drucken). Sie wird ueber den Gewindestutzen des
-# Tanks gestuelpt (Stutzen aussen 100 mm, innen ca. 80 mm). Das ToF-Board klebt mit der Rueckseite mittig an der
-# Innenseite der Kappenplatte, der Sensor schaut offen nach unten durch den Stutzen in den Tank.
-# Gedruckt wird die Kappe mit der Platte unten auf dem Bett (Oeffnung nach oben).
+# Tanks gestuelpt (Stutzen aussen 100 mm, innen ca. 80 mm) und hat in der Mitte ein Sichtloch. Das ToF-Board sitzt
+# AUSSEN auf der Kappe in einem separaten Sensorhalter (2x drucken, mit Heissleim ueber das Sichtloch geklebt),
+# so muss das Kabel nirgends durch die Kappe. Gedruckt wird die Kappe mit der Platte unten auf dem Bett.
 CAP_ID, CAP_H, CAP_T = 102.0, 30.0, 3.0    # Innendurchmesser (Stutzen 100 + 1 mm Spiel je Seite), Tiefe ueber der Platte, Wand
+CAP_VIEW_D = 24.0                          # Sichtloch in der Kappenplatte (grosszuegig, das Fenster im Halter begrenzt den Strahl)
+HOLDER_MARGIN, HOLDER_TAIL = 3.0, 8.0      # Rand um das Board, Platz auf der Pinseite fuer die Kabeladern
 
 # Sensorkabel (je Sensor 1, z. B. Cat5/6, 1-2 m): U-Schlitz von oben in die Wand, Stecker muss nicht durch
 CABLE_W, CABLE_DEPTH = 10.0, 12.0
@@ -160,6 +163,15 @@ def u_slot(x, y0, ztop, w, depth, target):
 
 
 # ---- Montagestrukturen (fuer Unterteil, Sensorgehaeuse und Passprobe gleich; org = absoluter Ursprung) ----
+def tof_cut(uc, v, org, target):
+    """Fensterdurchbruch in der Platte. v = Kante des Boards auf der Fensterseite, uc = Mitte."""
+    x, y = org[0] + uc, org[1] + v + TOF_HY
+    r = TOF_WIN_W / 2
+    box(None, [x - (TOF_WIN_L - TOF_WIN_W) / 2, y - r, -1], [TOF_WIN_L - TOF_WIN_W, TOF_WIN_W, FL + 2], "cut", target)
+    for dx in (-(TOF_WIN_L - TOF_WIN_W) / 2, (TOF_WIN_L - TOF_WIN_W) / 2):
+        cyl([x + dx, y, -1], TOF_WIN_W - 0.02, FL + 2, "Z", target=target)   # minimal schmaler: Tangente schlaegt sonst fehl
+
+
 def tof_join(uc, v, org, target):
     """Stifte durch die Befestigungsloecher und Rahmen an der Fensterseite und links/rechts (Pinseite offen)."""
     for du in (-TOF_HX / 2, TOF_HX / 2):
@@ -250,22 +262,30 @@ for (u, v) in POSTS:   # Ausschnitte fuer Eckpfosten
     cyl([mx(T + u + POST / 2), T + v + POST / 2, -1], LID_HOLE, LID_T + 2, op="cut", target="Deckel")
 box(None, [mx(T + CABLE_U + CABLE_W / 2 + 1), T + LI - 3, LID_T], [CABLE_W + 2, 4, LIP_H + 1], "cut", "Deckel")  # Lippe am Kabelschlitz offen
 
-# ---------------- Sensorkappe: Blindkappe ueber den Tankstutzen, Sensor haengt mittig an der Plattenunterseite ----------------
+# ---------------- Sensorkappe: Blindkappe ueber den Tankstutzen mit Sichtloch in der Mitte ----------------
 # Becher: Platte FL dick (im Einsatz oben), darauf eine Wand mit CAP_ID Innendurchmesser und CAP_H Hoehe (im Einsatz nach unten offen).
 CAP_R = CAP_ID / 2 + CAP_T
 CAPCX, CAPCY = LX + WO + 15.0 + CAP_R, CAP_R
-CAP_ORG = (CAPCX, CAPCY)
 cmd("solid.cylinder", diameter=2 * CAP_R, height=FL + CAP_H, base=[CAPCX, CAPCY, 0], axis="Z", body_name="Sensorgehaeuse")
 cyl([CAPCX, CAPCY, FL], CAP_ID, CAP_H + 1, target="Sensorgehaeuse")
-u_slot(CAPCX, CAPCY + CAP_ID / 2 - 1, FL + CAP_H, CABLE_W, CABLE_DEPTH, "Sensorgehaeuse")   # 6-adriges Kabel
-# Sensor genau in der Mitte, Pinseite des Boards zeigt zum Kabelschlitz (+Y). Das Board liegt mit der Rueckseite auf
-# der Platte (Stifte durch die Befestigungsloecher), die Sensorseite zeigt zur Oeffnung, also im Einsatz nach unten.
+cyl([CAPCX, CAPCY, -1], CAP_VIEW_D, FL + 2, target="Sensorgehaeuse")
+
+# ---------------- Sensorhalter: kleine Platte mit Fenster, Stiften und Rahmen fuer das ToF-Board ----------------
+# Wird mit dem Fenster ueber das Sichtloch auf die Aussenseite der Kappe geklebt. Das Board liegt mit der Sensorseite
+# nach unten auf der Platte, Pinseite zeigt nach +Y (dort die Adern anloeten).
 TOF_V0 = -TOF_HY
-tof_join(0.0, TOF_V0, CAP_ORG, "Sensorgehaeuse")
+HW = TOF_W + 2 * (TOF_C + TOF_RIM + HOLDER_MARGIN)
+HY_FRONT = TOF_C + TOF_RIM + HOLDER_MARGIN                 # Plattenkante bis Board-Vorderkante
+HL = HY_FRONT + TOF_H + HOLDER_TAIL
+HX = CAPCX + CAP_R + 15.0
+HOLDER_ORG = (HX + HW / 2, HY_FRONT + TOF_HY)             # Sensormitte
+cmd("solid.box", length=round(HW, 3), width=round(HL, 3), height=FL, corner=[HX, 0, 0], body_name="Sensorhalter")
+tof_cut(0.0, TOF_V0, HOLDER_ORG, "Sensorhalter")
+tof_join(0.0, TOF_V0, HOLDER_ORG, "Sensorhalter")
 
 # ---------------- Passprobe: Probedruck zum Pruefen der Masse, bevor das ganze Gehaeuse gedruckt wird ----------------
-# Enthaelt den TP4056-Sockel mit USB-C-Loch in der Wand und die ToF-Stifte mit Rahmen.
-CX = CAPCX + CAP_R + 15.0
+# Enthaelt den TP4056-Sockel mit USB-C-Loch in der Wand und ein ToF-Fenster mit Stiften/Rahmen wie im Sensorhalter.
+CX = HX + HW + 15.0
 PP_V = 3.0 + TP_RIM + C                  # TP4056 ab hier in Y
 PP_UC = TP_U + TP_L + 4.0 + TOF_W / 2 + TOF_C + TOF_RIM
 PP_W = T + PP_UC + TOF_W / 2 + 4.0
@@ -275,9 +295,10 @@ cmd("solid.box", length=round(PP_W, 3), width=round(PP_L, 3), height=FL, corner=
 box(None, [CX, 0, FL], [T, PP_L, 14.0], "join", "Passprobe")
 slot_x(CX - 1, PP_V + TP_W / 2, FL + TP_USB_Z, TP_USB_W, TP_USB_H, "Passprobe")
 tp_join(TP_U, PP_V, PP_ORG, "Passprobe")
+tof_cut(PP_UC, 4.0, PP_ORG, "Passprobe")
 tof_join(PP_UC, 4.0, PP_ORG, "Passprobe")
 
-cmd("appearance.assign", bodies=["Unterteil", "Deckel", "Sensorgehaeuse", "Passprobe"], color="#d9d9d9")
+cmd("appearance.assign", bodies=["Unterteil", "Deckel", "Sensorgehaeuse", "Sensorhalter", "Passprobe"], color="#d9d9d9")
 
 UNTER_CMDS = len(cmds)
 
@@ -299,7 +320,7 @@ ph("TP4056", P(TP_U, TP_V, TP_PLAT), (TP_L, TP_W, 4.2), "#1a1a1a")
 cmd("solid.cylinder", diameter=SW_BODY_D, height=SW_DEPTH, base=P(SW_U, 0, SW_Z), axis="Y", body_name="Schalter")
 cmd("appearance.assign", bodies=["Schalter"], color="#aa2222", opacity=0.85)
 PH.append("Schalter")
-ph("ToF", P(-TOF_W / 2, TOF_V0, 0, CAP_ORG), (TOF_W, TOF_H, TOF_PCB), "#2a5db0")
+ph("ToF", P(-TOF_W / 2, TOF_V0, 0, HOLDER_ORG), (TOF_W, TOF_H, TOF_PCB), "#2a5db0")
 
 
 def write_and_run():
@@ -310,7 +331,7 @@ def write_and_run():
     json.dump(unter, open(js, "w"), indent=1)
     json.dump(full, open(jsa, "w"), indent=1)
     print(f"Hauptgehaeuse innen {WI} x {LI} x {HI} mm, aussen {WO} x {LO} x {HO + LID_T} mm (mit Deckel)")
-    print(f"Sensorkappe (2x drucken) innen d{CAP_ID} x {CAP_H} mm tief, aussen d{2 * CAP_R} x {FL + CAP_H} mm")
+    print(f"Sensorkappe (2x drucken) innen d{CAP_ID} x {CAP_H} mm tief, aussen d{2 * CAP_R} x {FL + CAP_H} mm; Sensorhalter (2x) {round(HW, 1)} x {round(HL, 1)} mm")
     if "--no-run" in sys.argv:
         return
     def run(*a):
@@ -320,7 +341,7 @@ def write_and_run():
         return r
     run("run", js, "--save", os.path.join(HERE, "Gehaeuse.solidcraft"), "--quiet")
     for body, fn in (("Unterteil", "Gehaeuse_Unterteil.stl"), ("Deckel", "Gehaeuse_Deckel.stl"),
-                     ("Sensorgehaeuse", "Sensorkappe.stl"),
+                     ("Sensorgehaeuse", "Sensorkappe.stl"), ("Sensorhalter", "Sensorhalter.stl"),
                      ("Passprobe", "Gehaeuse_Passprobe.stl")):
         exp = {"commands": cmds[:UNTER_CMDS] + [{"command": "file.export",
                                                   "params": {"path": os.path.join(HERE, fn), "bodies": [body]}}]}
