@@ -8,15 +8,17 @@
 # Home Assistant legt die Sensoren per MQTT-Discovery automatisch an.
 # OTA (Firmware-Update per WLAN): retained "ON" auf ${name}/ota_mode publishen, dann bleibt das
 #      Geraet nach der naechsten Wachphase wach (max. 30 min). "OFF" -> sofort Deep Sleep.
+# Schlafdauer: retained Zahl (Minuten, 1..1440) auf ${name}/sleep_minutes. Gilt ab der naechsten Wachphase.
+# Rueckmeldung: Sensoren "Schlafdauer aktiv" (Minuten) und "Modus" (Normal / OTA aktiv) zeigen, was wirklich gilt.
 # Nach dem Timer-Aufwachen wartet es max. 30 s auf den Broker, nach Einschalten/RST 60 s.
 
 substitutions:
   name: tankmonitor
   friendly_name: Tankmonitor
-  sleep_duration: 60min
-  sleep_duration_low_bat: 24h
+  sleep_default_min: "60"        # Minuten, solange kein ${name}/sleep_minutes gesetzt ist
+  sleep_low_bat_min: "1440"      # Minuten bei schwachem Akku
   low_bat_voltage: "3.30"        # V; darunter nur noch selten aufwachen (DW01 schuetzt erst bei ~2.4 V)
-  samples: "7"                   # Messungen pro Sensor, davon der Median
+  samples: "15"                  # Messungen pro Sensor, davon der Median (Akku egal bei 1 Messzyklus/h)
 
   max_range: "2.0"               # m; TOF200C (VL53L0X), laengere Werte (z. B. 8.19) sind Fehlmessungen
 
@@ -81,9 +83,12 @@ wifi:
 
 deep_sleep:
   id: deep_sleep_1
-  sleep_duration: ${sleep_duration}
+  sleep_duration: ${sleep_default_min}min   # nur Vorgabe, der Wert wird vor dem Schlafen ueberschrieben
 
 globals:
+  - id: sleep_min_eff
+    type: int
+    initial_value: ${sleep_default_min}
   - id: buf1
     type: std::vector<float>
   - id: buf2
@@ -105,14 +110,32 @@ text_sensor:
     id: ota_mode
     topic: ${name}/ota_mode
     internal: true
+  # Rueckmeldung: was gilt gerade (nach dem Aufwachen gesetzt, retained)
+  - platform: template
+    id: mode_status
+    name: Modus
+    icon: mdi:power-sleep
 
 sensor:
+  # Schlafdauer-Vorgabe: retained Zahl in Minuten auf ${name}/sleep_minutes
+  - platform: mqtt_subscribe
+    id: sleep_cfg
+    topic: ${name}/sleep_minutes
+    internal: true
+  - platform: template
+    id: sleep_active
+    name: Schlafdauer aktiv
+    unit_of_measurement: min
+    device_class: duration
+    accuracy_decimals: 0
+    update_interval: never
   # Rohmessungen, nur intern; jeder Wert landet im Puffer, der Median wird unten berechnet
   - platform: vl53l0x
     id: tof1
     address: 0x30
     enable_pin: GPIO5            # XSHUT Sensor 1
     long_range: true             # bis ca. 2 m, dafuer etwas mehr Rauschen
+    signal_rate_limit: 0.1       # MCPS; niedriger als Standard (0.25) = empfindlicher bei dunkler Oelflaeche
     timeout: 200ms
     update_interval: never
     internal: true
@@ -123,6 +146,7 @@ sensor:
     address: 0x31
     enable_pin: GPIO10           # XSHUT Sensor 2
     long_range: true
+    signal_rate_limit: 0.1
     timeout: 200ms
     update_interval: never
     internal: true
@@ -210,6 +234,19 @@ sensor:
     id: rssi
 
 script:
+  # Schlafdauer aus ${name}/sleep_minutes (1..1440), bei schwachem Akku die lange Pause; meldet den Wert zurueck
+  - id: apply_sleep
+    then:
+      - lambda: |-
+          float v = id(vbat).state;
+          bool low = !std::isnan(v) && v > 2.5f && v < ${low_bat_voltage};
+          float m = id(sleep_cfg).has_state() ? id(sleep_cfg).state : ${sleep_default_min};
+          if (std::isnan(m)) m = ${sleep_default_min};
+          m = std::max(1.0f, std::min(1440.0f, m));
+          if (low) ESP_LOGW("sleep", "Akku schwach: lange Pause");
+          id(sleep_min_eff) = low ? ${sleep_low_bat_min} : (int) std::lround(m);
+          id(sleep_active).publish_state(id(sleep_min_eff));
+
   - id: measure_and_sleep
     mode: single
     then:
@@ -279,10 +316,12 @@ script:
           for (auto *s : {id(dist1), id(level1), id(liters1), id(dist2), id(level2), id(liters2),
                           id(vbat_v), id(bat_pct)})
             if (s->has_state()) s->publish_state(s->state);
-      - wait_until:              # retained ota_mode kommt direkt nach dem Abonnieren
+      - wait_until:              # retained ota_mode und sleep_minutes kommen direkt nach dem Abonnieren
           condition:
-            lambda: return id(ota_mode).has_state();
-          timeout: 3s            # nie gesetzt -> gilt als OFF
+            lambda: return id(ota_mode).has_state() && id(sleep_cfg).has_state();
+          timeout: 3s            # nie gesetzt -> OTA gilt als OFF, Schlafdauer als Vorgabe
+      - lambda: id(mode_status).publish_state(id(ota_mode).has_state() && id(ota_mode).state == "ON" ? "OTA aktiv" : "Normal");
+      - script.execute: apply_sleep
       - delay: 1s                # MQTT-Sendepuffer leeren
       # 6) Schlafen, ausser OTA-Modus ist aktiv
       - if:
@@ -295,15 +334,9 @@ script:
                   lambda: return id(ota_mode).state != "ON";
                 timeout: 30min
             - logger.log: "OTA-Modus beendet: Deep Sleep"
-            - deep_sleep.enter: deep_sleep_1
-          else:
-            - if:
-                condition:
-                  lambda: return !std::isnan(id(vbat).state) && id(vbat).state > 2.5f && id(vbat).state < ${low_bat_voltage};
-                then:
-                  - logger.log: "Akku schwach: lange Pause"
-                  - deep_sleep.enter:
-                      id: deep_sleep_1
-                      sleep_duration: ${sleep_duration_low_bat}
-                else:
-                  - deep_sleep.enter: deep_sleep_1
+            - lambda: id(mode_status).publish_state("Normal");
+            - script.execute: apply_sleep   # Schlafdauer evtl. waehrend OTA geaendert
+            - delay: 1s
+      - deep_sleep.enter:
+          id: deep_sleep_1
+          sleep_duration: !lambda 'return (uint32_t) id(sleep_min_eff) * 60000UL;'
