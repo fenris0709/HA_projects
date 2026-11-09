@@ -1,10 +1,13 @@
-# ESPHome: ESP32-C3 SuperMini + 2x TOF200C (VL53L0X, 2 m) an einem I2C-Bus + 18650, Deep Sleep
+# ESPHome: ESP32-C3 SuperMini + 1x TOF200C (VL53L0X, 2 m) + 18650, Deep Sleep. EIN Sensor pro Tank, EIN Geraet pro Tank.
 # Hardware siehe ../README.md
 #
+# Zweites Geraet: nur "sn" (und die Tankwerte) unten aendern, neu flashen. Der Name unter "sn" ist der
+# veroeffentlichte Name (Geraet, MQTT-Topic, Home Assistant), sonst unterscheiden sich die Geraete nicht.
+#
 # Ablauf pro Wachphase:
-#   (WLAN noch aus) Sensoren per XSHUT einzeln aufwecken und umadressieren (macht ESPHome)
-#   je N Messungen pro Sensor, Median -> Akkuspannung
+#   (WLAN noch aus) Sensor per XSHUT aufwecken -> N Messungen, Median -> Akkuspannung
 #   -> WLAN ein -> MQTT verbinden -> Werte (retained) publishen -> Deep Sleep
+# Im Deep Sleep floatet XSHUT, der Pulldown Rxs am Lochraster haelt den Sensor im Standby.
 # Home Assistant legt die Sensoren per MQTT-Discovery automatisch an.
 # OTA (Firmware-Update per WLAN): retained "ON" auf ${name}/ota_mode publishen, dann bleibt das
 #      Geraet nach der naechsten Wachphase wach (max. 30 min). "OFF" -> sofort Deep Sleep.
@@ -13,26 +16,21 @@
 # Nach dem Timer-Aufwachen wartet es max. 30 s auf den Broker, nach Einschalten/RST 60 s.
 
 substitutions:
-  name: tankmonitor
-  friendly_name: Tankmonitor
+  sn: "01"                       # Seriennummer / Tankkennung: macht Name und MQTT-Topic eindeutig (z. B. "01", "02")
+  name: tankmonitor-${sn}        # Geraetename und MQTT-Topic-Prefix (klein, ohne Leerzeichen)
+  friendly_name: Tankmonitor ${sn}
   sleep_default_min: "60"        # Minuten, solange kein ${name}/sleep_minutes gesetzt ist
   sleep_low_bat_min: "1440"      # Minuten bei schwachem Akku
   low_bat_voltage: "3.30"        # V; darunter nur noch selten aufwachen (DW01 schuetzt erst bei ~2.4 V)
-  samples: "15"                  # Messungen pro Sensor, davon der Median (Akku egal bei 1 Messzyklus/h)
+  samples: "15"                  # Messungen, davon der Median (Akku egal bei 1 Messzyklus/h)
 
   max_range: "2.0"               # m; TOF200C (VL53L0X), laengere Werte (z. B. 8.19) sind Fehlmessungen
 
-  # Tank 1 (ToF #1) - Abstaende in Metern ab Sensorunterkante
-  t1_name: Tank 1
+  # Tank: Abstaende in Metern ab Sensorunterkante (Sensor sitzt ca. 8 mm ueber der Verschlussoberseite, Messen!)
   # Tank 163 x 70 x 200 cm (H x B x L), Oeffnung mittig in der Breite, 30 cm von der Stirnwand, 10 cm Kragen
-  t1_dist_empty: "1.50"          # Abstand Sensor -> Tankboden (Fuellstand 0 %), max. ca. 1.8
-  t1_dist_full: "0.10"           # Abstand Sensor -> Oberflaeche bei 100 % (mind. 0.05)
-  t1_capacity: "1960"            # Liter bei 100 % (linear): 0.70 m x 2.00 m x (1.50 - 0.10) m
-  # Tank 2 (ToF #2), gleicher Tank
-  t2_name: Tank 2
-  t2_dist_empty: "1.50"
-  t2_dist_full: "0.10"
-  t2_capacity: "1960"
+  dist_empty: "1.50"             # Abstand Sensor -> Tankboden (Fuellstand 0 %), max. ca. 1.8
+  dist_full: "0.10"              # Abstand Sensor -> Oberflaeche bei 100 % (mind. 0.05)
+  capacity: "1960"               # Liter bei 100 % (linear): 0.70 m x 2.00 m x (1.50 - 0.10) m
 
 esphome:
   name: ${name}
@@ -73,7 +71,7 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   fast_connect: true             # nur ein AP: spart Scan-Zeit und damit Akku
-  enable_on_boot: false          # erst messen, dann funken: kein WLAN-Strom waehrend Sensoren anlaufen
+  enable_on_boot: false          # erst messen, dann funken: kein WLAN-Strom waehrend der Sensor anlaeuft
   reboot_timeout: 5min           # Notbremse, normal schlaeft das Geraet lange vorher
   # Feste IP verkuerzt die Wachphase weiter:
   # manual_ip:
@@ -89,19 +87,18 @@ globals:
   - id: sleep_min_eff
     type: int
     initial_value: ${sleep_default_min}
-  - id: buf1
-    type: std::vector<float>
-  - id: buf2
+  - id: buf
     type: std::vector<float>
 
-# Beide ToF-Sensoren haengen dauerhaft an 3V3 und teilen sich SDA/SCL. Jeder hat eine eigene XSHUT-Leitung
-# (Enable): damit weckt ESPHome sie nacheinander auf und gibt ihnen verschiedene Adressen
-# (beide starten mit 0x29). Im Deep Sleep floatet XSHUT, die Module ziehen es per Pull-up hoch (Standby).
+# Der ToF-Sensor haengt dauerhaft an 3V3 (VIN) und am I2C-Bus. XSHUT (GPIO5) ist die Enable-Leitung: ESPHome setzt
+# sie beim Start auf high (Sensor an, Adresse 0x29). Im Deep Sleep floatet der Pin, der Pulldown Rxs am Lochraster
+# zieht ihn auf low = Sensor im Standby (Sparmodus). Kurze Leitungen im Gehaeuse, daher 100 kHz.
+# GPIO1/INT des Moduls liegt auf GPIO4 (mit Pullup Rint), wird hier nicht benutzt.
 
 i2c:
   sda: GPIO6
   scl: GPIO7
-  frequency: 50kHz               # ESPHome-Standard, nicht schneller: 1-2 m Kabel je Sensor brauchen langsame Flanken
+  frequency: 100kHz
   scan: false
 
 text_sensor:
@@ -129,72 +126,37 @@ sensor:
     device_class: duration
     accuracy_decimals: 0
     update_interval: never
-  # Rohmessungen, nur intern; jeder Wert landet im Puffer, der Median wird unten berechnet
+  # Rohmessung, nur intern; jeder Wert landet im Puffer, der Median wird unten berechnet
   - platform: vl53l0x
-    id: tof1
-    address: 0x30
-    enable_pin: GPIO5            # XSHUT Sensor 1
+    id: tof
+    address: 0x29
+    enable_pin: GPIO5            # XSHUT
     long_range: true             # bis ca. 2 m, dafuer etwas mehr Rauschen
     signal_rate_limit: 0.1       # MCPS; niedriger als Standard (0.25) = empfindlicher bei dunkler Oelflaeche
     timeout: 200ms
     update_interval: never
     internal: true
     on_value:
-      - lambda: if (!std::isnan(x) && x <= ${max_range}) id(buf1).push_back(x);
-  - platform: vl53l0x
-    id: tof2
-    address: 0x31
-    enable_pin: GPIO10           # XSHUT Sensor 2
-    long_range: true
-    signal_rate_limit: 0.1
-    timeout: 200ms
-    update_interval: never
-    internal: true
-    on_value:
-      - lambda: if (!std::isnan(x) && x <= ${max_range}) id(buf2).push_back(x);
+      - lambda: if (!std::isnan(x) && x <= ${max_range}) id(buf).push_back(x);
 
   - platform: template
-    id: dist1
-    name: ${t1_name} Abstand
+    id: dist
+    name: Abstand
     unit_of_measurement: m
     accuracy_decimals: 3
     device_class: distance
     state_class: measurement
     update_interval: never
   - platform: template
-    id: level1
-    name: ${t1_name} Füllstand
+    id: level
+    name: Füllstand
     unit_of_measurement: "%"
     accuracy_decimals: 1
     state_class: measurement
     update_interval: never
   - platform: template
-    id: liters1
-    name: ${t1_name} Inhalt
-    unit_of_measurement: L
-    accuracy_decimals: 0
-    device_class: volume_storage
-    state_class: measurement
-    update_interval: never
-
-  - platform: template
-    id: dist2
-    name: ${t2_name} Abstand
-    unit_of_measurement: m
-    accuracy_decimals: 3
-    device_class: distance
-    state_class: measurement
-    update_interval: never
-  - platform: template
-    id: level2
-    name: ${t2_name} Füllstand
-    unit_of_measurement: "%"
-    accuracy_decimals: 1
-    state_class: measurement
-    update_interval: never
-  - platform: template
-    id: liters2
-    name: ${t2_name} Inhalt
+    id: liters
+    name: Inhalt
     unit_of_measurement: L
     accuracy_decimals: 0
     device_class: volume_storage
@@ -250,44 +212,34 @@ script:
   - id: measure_and_sleep
     mode: single
     then:
-      # 1+2) Nacheinander messen. Ausreisser und Fehlmessungen (Timeout, > max_range) verwirft der Median.
+      # 1) Messen. Ausreisser und Fehlmessungen (Timeout, > max_range) verwirft der Median.
       - repeat:
           count: ${samples}
           then:
-            - component.update: tof1
+            - component.update: tof
             - delay: 250ms
-      - repeat:
-          count: ${samples}
-          then:
-            - component.update: tof2
-            - delay: 250ms
-      # 3) Median und Fuellstand berechnen
+      # 2) Median und Fuellstand berechnen
       - lambda: |-
-          static_assert(${t1_dist_empty} > ${t1_dist_full}, "t1_dist_empty muss groesser als t1_dist_full sein");
-          static_assert(${t2_dist_empty} > ${t2_dist_full}, "t2_dist_empty muss groesser als t2_dist_full sein");
+          static_assert(${dist_empty} > ${dist_full}, "dist_empty muss groesser als dist_full sein");
           auto median = [](std::vector<float> v) -> float {
             if (v.empty()) return NAN;
             std::sort(v.begin(), v.end());
             size_t n = v.size();
             return n % 2 ? v[n / 2] : (v[n / 2 - 1] + v[n / 2]) / 2.0f;
           };
-          auto publish = [](float d, float empty, float full, float cap,
-                            template_::TemplateSensor *ds, template_::TemplateSensor *ls,
-                            template_::TemplateSensor *vs) {
-            ds->publish_state(d);
-            if (std::isnan(d)) { ls->publish_state(NAN); vs->publish_state(NAN); return; }
-            float lvl = (empty - d) / (empty - full);
+          ESP_LOGI("tank", "%u gueltige Messungen von ${samples}", (unsigned) id(buf).size());
+          float d = median(id(buf));
+          id(dist).publish_state(d);
+          if (std::isnan(d)) {
+            id(level).publish_state(NAN);
+            id(liters).publish_state(NAN);
+          } else {
+            float lvl = (${dist_empty} - d) / (${dist_empty} - ${dist_full});
             lvl = std::max(0.0f, std::min(1.0f, lvl));
-            ls->publish_state(lvl * 100.0f);
-            vs->publish_state(lvl * cap);
-          };
-          ESP_LOGI("tank", "Tank 1: %u gueltige Messungen, Tank 2: %u",
-                   (unsigned) id(buf1).size(), (unsigned) id(buf2).size());
-          publish(median(id(buf1)), ${t1_dist_empty}, ${t1_dist_full}, ${t1_capacity},
-                  id(dist1), id(level1), id(liters1));
-          publish(median(id(buf2)), ${t2_dist_empty}, ${t2_dist_full}, ${t2_capacity},
-                  id(dist2), id(level2), id(liters2));
-      # 4) Akku (Sensoren sind im Leerlauf, kaum Last)
+            id(level).publish_state(lvl * 100.0f);
+            id(liters).publish_state(lvl * ${capacity});
+          }
+      # 3) Akku (Sensor ist im Leerlauf, kaum Last)
       - component.update: vbat
       - lambda: |-
           float v = id(vbat).state;
@@ -301,7 +253,7 @@ script:
           const float empty = ${low_bat_voltage};
           float pct = (v - empty) / (4.15f - empty) * 100.0f;
           id(bat_pct).publish_state(std::max(0.0f, std::min(100.0f, pct)));
-      # 5) WLAN ein, mit dem MQTT-Broker verbinden und alle Werte (retained) publishen
+      # 4) WLAN ein, mit dem MQTT-Broker verbinden und alle Werte (retained) publishen
       - wifi.enable:
       - wait_until:
           condition:
@@ -313,8 +265,7 @@ script:
       - lambda: |-
           // Werte nach dem Verbinden nochmals senden, damit sie sicher beim Broker ankommen
           // nur Template-Sensoren (ohne Filter), sonst wuerden Filter doppelt angewendet
-          for (auto *s : {id(dist1), id(level1), id(liters1), id(dist2), id(level2), id(liters2),
-                          id(vbat_v), id(bat_pct)})
+          for (auto *s : {id(dist), id(level), id(liters), id(vbat_v), id(bat_pct)})
             if (s->has_state()) s->publish_state(s->state);
       - wait_until:              # retained ota_mode und sleep_minutes kommen direkt nach dem Abonnieren
           condition:
@@ -323,7 +274,7 @@ script:
       - lambda: id(mode_status).publish_state(id(ota_mode).has_state() && id(ota_mode).state == "ON" ? "OTA aktiv" : "Normal");
       - script.execute: apply_sleep
       - delay: 1s                # MQTT-Sendepuffer leeren
-      # 6) Schlafen, ausser OTA-Modus ist aktiv
+      # 5) Schlafen, ausser OTA-Modus ist aktiv
       - if:
           condition:
             lambda: return id(ota_mode).has_state() && id(ota_mode).state == "ON";

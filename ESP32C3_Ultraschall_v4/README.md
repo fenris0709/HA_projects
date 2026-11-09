@@ -1,111 +1,84 @@
-# Tankmonitor Prototyp: ToF-Sensoren + Streifenraster + 3D-Druck-Gehäuse
+# Tankmonitor Prototyp: 1 ToF-Sensor pro Tank, Lochraster + 3D-Druck-Gehäuse auf dem Tankverschluss
 
-ESP32-C3 SuperMini, 2× TOF200C (VL53L0X, 2 m) an einem I2C-Bus, 18650 mit TP4056-Lader. Misst stündlich und sendet per MQTT.
+ESP32-C3 SuperMini, 1× TOF200C (VL53L0X, 2 m), 18650 mit TP4056-Lader. Misst stündlich und sendet per MQTT. **Ein komplettes Gerät pro Tank**, also zweimal bauen, wenn zwei Tanks überwacht werden.
 
-Ersetzt die JSN-SR04T-Variante: Ultraschall sah die Tankwände. Der ToF-Strahl ist mit ca. 25° deutlich enger.
+Ersetzt die Variante mit zwei Sensoren an einem Bus (Kabel, Adressen, Störungen) und davor die JSN-SR04T-Ultraschallvariante (sah die Tankwände). Der ToF-Strahl ist mit ca. 25° deutlich enger.
 
-`firmware/` ESPHome ([Anleitung](firmware/README.md)) · `docs/` Schaltplan und Streifenraster (Generatoren) · `case/` Gehäuse (SolidCraft, STL) · `datasheets/` ([ToF-Kerndaten](datasheets/tof_sensors.md), [Platinenmasse](datasheets/tof200c_dimensions.md))
+`firmware/` ESPHome ([Anleitung](firmware/README.md)) · `docs/` [Schaltung, Pinout, Lochraster-Layout](docs/schaltung.md) · `case/` Gehäuse (SolidCraft-Skript, STL) · `datasheets/` ([ToF-Kerndaten](datasheets/tof_sensors.md), [Platinenmasse](datasheets/tof200c_dimensions.md))
 
 ## Aufbau
 
-- **Hauptgehäuse** mit ESP, TP4056, Akku und Schalter. Stehen irgendwo trocken, per Kabel verbunden.
-- **2× Sensorkappe**: je eine Blindkappe, die über den Gewindestutzen des Tanks gestülpt wird (innen Ø 102 mm, 30 mm tief), mit einem Sichtloch in der Mitte. Darauf sitzt aussen ein **Sensorhalter** mit dem ToF-Board, der durch das Loch in den Tank misst. So muss das Kabel nicht durch die Kappe.
-- **2 Kabel**, je 1–2 m, vom Hauptgehäuse zu je einem Sensor. Die Sensoren hängen am selben I2C-Bus.
+- **Ein Gehäuse** auf der flachen Oberseite des Original-Tankverschlusses (Ø ca. 110 mm). Der Sensor schaut durch ein Fenster im Boden und ein **gebohrtes Loch (Ø 12)** im Verschluss in den Tank. Kein Kabel, keine Sensorkappe.
+- Im Gehäuse: Lochraster 60 × 40 mm (ESP und Sensor gesteckt, Rest verlötet), TP4056 mit USB-C, 18650-Halter, Kippschalter.
+- Die Platine hängt mit der **Bestückungsseite nach unten** auf vier Pfosten: ESP und ToF-Modul hängen darunter, die Lötseite liegt oben.
+- **Deckel schiebt von der Seite ein**, keine Schrauben am Gehäuse.
+- Das Gehäuse darf über den Verschluss überstehen (ca. 90 × 69 mm). Zwei Laschen (vorne/hinten) lassen optional zwei Schrauben durch den Verschluss zu.
 
-## Schaltung
+## Schaltung und Platine
 
-![Schaltplan](docs/schema_prototyp.svg)
+Siehe [docs/schaltung.md](docs/schaltung.md): Pinout von ESP und Sensor mit allen Pullups und dem Pulldown, Schaltplan, Bauteilliste, Layout grob und externe Verdrahtung.
 
-- Beide Sensoren hängen dauerhaft an 3V3 und teilen sich SDA/SCL (GPIO6/7).
-- **XSHUT = Enable je Board** (GPIO5 und GPIO10): Beide Module starten mit Adresse 0x29. ESPHome weckt sie einzeln und stellt 0x30 und 0x31 ein. Deshalb braucht jeder Sensor eine eigene XSHUT-Leitung.
-- R1/R2/C1 messen die Akkuspannung (1:2 an GPIO1, ca. 2 µA).
-- Pins: SDA/SCL = GPIO6/7, XSHUT1/2 = GPIO5/10, Akku = GPIO1.
-- Die ToF-Module haben SDA/SCL-Pull-ups und einen Spannungsregler. Am Modul nachsehen, sonst 4,7 kΩ nach 3V3 am Streifenraster ergänzen.
-- Laufzeit: noch nicht gemessen. Die Sensoren ziehen nur beim Messen ca. 19 mA, im Leerlauf wenig (Regler auf dem Modul nachmessen). Multimeter in Reihe zum Kippschalter.
+Kurz:
+- I2C: SDA/SCL = GPIO6/7, 100 kHz, kurze Leitungen im Gehäuse.
+- **XSHUT bleibt** an GPIO5: Der Pulldown `Rxs` (1 kΩ) hält den Sensor im Deep Sleep im Standby (Sparmodus).
+- Das ganze Sensor-Pinout liegt auf einer Buchsenleiste (VIN, GND, SDA, SCL, GPIO1/INT, XSHUT). INT geht mit Pullup an GPIO4, wird nicht benutzt.
+- Akku: Teiler 1 MΩ/1 MΩ an GPIO1.
 
-## Kabel zu den Sensoren (1–2 m)
+## Teile (pro Gerät)
 
-Machbar, I2C ist dafür aber nicht gedacht. Die Leitungskapazität (ca. 50–100 pF/m) plus Störungen im Heizraum (Brenner-Zündtrafo, Pumpen) sind das Risiko. Gegenmassnahmen:
-
-- **50 kHz Bustakt** (ESPHome-Standard, so in `tankmonitor.yaml`). Nicht schneller einstellen.
-- **Verdrillte Paare mit GND**: Cat5/6-Kabel (am besten geschirmt, Schirm an GND nur am Hauptgehäuse). Paare: SDA+GND, SCL+GND, VIN+GND, XSHUT+GND.
-- **10–47 µF und 100 nF an VIN/GND direkt am Sensor**, auf der Platine oder im Sensorhalter. Das fängt die 19-mA-Pulse ab.
-- Kabel nicht parallel zu Netz- oder Zündleitungen führen.
-- **Test:** Im Log müssen alle 7 Messungen gültig sein (siehe [firmware/README.md](firmware/README.md)). Fehlen Messungen oder hängt der Bus, helfen stärkere Pull-ups (2,2 kΩ am Streifenraster) oder ein I2C-Treiber wie P82B715. Über ca. 3 m besser ein differentieller Treiber (PCA9615).
-- XSHUT-Leitungen sind statisch und unkritisch.
-
-## Teile
-
-| Teil | Wert |
+| Teil | Wert / Anzahl |
 |---|---|
-| TP4056 USB-C-Modul mit Schutz (IN±, B±, OUT±) | – |
-| TOF200C (VL53L0X) | 2 |
-| R1, R2 | 1 MΩ |
-| C1 | 100 nF |
-| C2 | Elko 1 µF (besser 10–47 µF, Ø ≤ 5 mm), + an Spalte 3 |
-| C3, C4 (je Sensor) | 10–47 µF und 100 nF an VIN/GND |
-| Streifenraster | 10 × 14 Löcher |
-| Buchsenleiste 1×8 (2×), Stiftleiste 1×5 (2×) und 1×2 | – |
-| Sensorkabel Cat5/6 | 2 × 1–2 m |
-| Gewindeeinsätze + Schrauben | M3 (4×, Deckel Hauptgehäuse) |
-| Heissleim | – |
+| ESP32-C3 SuperMini | 1 |
+| TOF200C (VL53L0X) | 1 |
+| Lochraster Punktraster 60 × 40 mm | 1 |
+| Buchsenleisten 1×8 (2×) und 1×6 | 8,5 mm hoch |
+| TP4056 USB-C-Modul mit Schutz (IN±, B±, OUT±) | 1 |
+| 18650-Zelle mit 1-fach-Halter | 1 |
+| Kippschalter rund, Ø 20 mm Loch, ca. 25 mm tief | 1 |
+| Widerstände und Kondensatoren | siehe [Bauteilliste](docs/schaltung.md#bauteile-auf-dem-lochraster) |
+| Silikon oder Heissleim | – |
+| optional 2× Schrauben M3 + Dichtung für die Laschen | – |
 
-## Aufbau Streifenraster
-
-![Streifenraster](docs/stripboard.svg)
-
-Koordinaten (Spalte, Zeile) ab oben links, Bestückungsseite. Die Streifen laufen senkrecht. Spalte 0 = GND, Spalte 9 = 3V3. Im Gehäuse liegt Zeile 0 hinten (Kabelschlitz).
-
-1. 10 × 14 Löcher zuschneiden (25,4 × 35,6 mm).
-2. 10 Trennstellen bohren: Zeile 4 in den Spalten 4 und 5, Zeile 7 in den Spalten 1–8.
-3. 4 Drahtbrücken:
-   - Zeile 2: 3V3, verlötet an Spalte 5 und 9
-   - Zeile 3: GND, verlötet an Spalte 0 und 4
-   - Zeile 12: GND 0→2 und 3V3 3→9
-4. Liegend unter dem ESP: R1 (1,8)–(7,8), R2 (2,9)–(7,9), C1 (2,10)–(7,10). C2 (2,13)–(3,13).
-5. Stecker und Leisten:
-   - J1 (Sensor 1) in Zeile 1: XSHUT, SDA, SCL, GND, VIN auf Spalte 1–5
-   - J2 (Sensor 2) in Zeile 0: SDA, SCL, GND, VIN, XSHUT auf Spalte 2–6
-   - J3 (GND, VBAT) bei (0,13)/(1,13)
-   - Buchsenleisten für den ESP in Zeile 5 und 11, Spalten 1–8, USB-C links
-6. Mit dem Multimeter prüfen: zwischen 3V3, GND und VBAT_SW darf kein Kurzschluss sein. Erst dann den ESP stecken.
-
-Pinbelegung und Reihenabstand (15,24 mm) des SuperMini vor dem Löten am eigenen Modul prüfen. `python docs/gen_stripboard.py` prüft alle Verbindungen gegen den Schaltplan.
-
-**Externe Verdrahtung:**
-- Akku → TP4056 B+/B−
-- OUT+ → Kippschalter → J3 VBAT
-- **OUT− → J3 GND** (nicht B−)
-- Sensorkabel: pro Sensor VIN, GND, SDA, SCL, XSHUT einzeln an J1 bzw. J2. Die Kabel gehen durch den Schlitz in der Rückwand.
+Filament pro Gerät ca. 35 g PLA (Gehäuse 20 cm³ + Deckel 9 cm³, fast alles ist Wand, Infill spielt kaum eine Rolle). Nichts im Gehäuse wird verschraubt, alles wird mit Heissleim fixiert (Akkuhalter, TP4056) oder gesteckt (Platine auf den Zapfen).
 
 ## Gehäuse
 
-`python case/gen_case.py` erzeugt per SolidCraft-CLI das Design (`.solidcraft`), alle STL und Vorschaubilder. Alle Platinen werden mit **Heissleim** eingeklebt, es gibt keine Schnappmechanismen. Stattdessen:
-
-- Eckauflagen und Anschläge für das Streifenraster
-- Sockel mit Rahmen für den TP4056
-- Positionierrahmen für den Akkuhalter
-- im Sensorhalter Stifte durch die Befestigungslöcher des ToF-Boards plus Rahmen
+`python case/gen_case.py` erzeugt per SolidCraft-CLI das Design (`Gehaeuse.solidcraft`), die STL und Vorschaubilder. `--no-run` schreibt nur die JSON.
 
 | STL | Stück | Inhalt |
 |---|---|---|
-| `Gehaeuse_Unterteil.stl` | 1 | ESP, TP4056, Akku, Schalter. Innen 65 × 92 × 30 mm |
-| `Gehaeuse_Deckel.stl` | 1 | Deckel dazu, Aussenseite nach unten drucken |
-| `Sensorkappe.stl` | **2** | Blindkappe, innen Ø 102 × 30 mm tief, Platte 2 mm mit Sichtloch Ø 24 in der Mitte. Mit der Platte nach unten drucken, die Platte zeigt im Einsatz nach oben |
-| `Sensorhalter.stl` | **2** | Platte 28,6 × 23,3 mm mit Fenster, Stiften und Rahmen für das ToF-Board. Mit Heissleim aussen auf die Kappe über das Sichtloch kleben |
-| `Gehaeuse_Passprobe.stl` | 1 (zuerst) | Probestück: ToF-Fenster mit Stiften und TP4056-Sockel mit USB-C-Loch. Damit die Masse prüfen, bevor alles gedruckt wird |
+| `Gehaeuse.stl` | 1 pro Gerät | Boden unten drucken, ohne Stützen. Innen 87,2 × 66,2 × 23 mm, aussen ca. 90 × 69 × 27 mm |
+| `Deckel.stl` | 1 pro Gerät | flach drucken, 1,6 mm dick. Schiebt von links in die Nuten |
 
-- Durchbrüche im Hauptgehäuse:
-  - links: USB-C des ESP und des TP4056
-  - vorne: Schalter Ø 20,2 mm
-  - hinten: Kabelschlitz (von oben offen) für beide Sensorkabel
-- Sensorkappe und Sensorhalter: Das ToF-Board liegt mit der Sensorseite nach unten auf dem Halter, Stifte durch die Befestigungslöcher, mit Heissleim fixieren. Das Fenster im Halter (10,6 × 5,8 mm) liegt über dem Sichtloch der Kappe. Pinseite zeigt nach hinten, dort die 5 Adern anlöten, das Kabel läuft aussen über die Kappe weg. Die Kappe wird über den Stutzen (aussen Ø 100 mm, 1 mm Spiel je Seite) geschoben und liegt mit der Platte auf dem Stutzen auf. Das Board liegt offen auf der Kappe. Bei Bedarf Abdeckung oder Klebeband darüber, die ist nicht modelliert. Schrauben, Dichtung und Gewinde auch nicht.
-- Vor dem Druck nachmessen und in `gen_case.py` eintragen: TOF-Platine (`TOF_*`, siehe `datasheets/tof200c_dimensions.md`, Platinendicke und Sensorhöhe sind geschätzt), TP4056 (`TP_*`), Akkuhalter (`BAT_*`), Schalter (`SW_*`), Einschmelzmuttern (`POST_*`), ESP-Höhe (`ESP_*`), Tankdeckel (`CAP_*`).
+Wenig Filament und schnell gedruckt: 1,2 mm Wände und Boden, keine Rundungen innen, Pfosten statt Rahmen, Rippen nur oben an den Längswänden (mit 45°-Stufen, ohne Stützen). Bei 0,4 mm Düse sind das 3 Linien pro Wand. Layer 0,28 mm, Infill 10 %, 2 Wandlinien reichen für Boden und Deckel.
+
+- **Platine:** Vier Pfosten Ø 5 mm, 17,5 mm hoch, mit Zapfen Ø 1,6 × 4 mm durch die Montagelöcher (Ø 1,8, 2,5 mm vom Rand). Aufstecken, bei Bedarf mit einem Tropfen Heissleim sichern.
+- **Durchbrüche:** links USB-C des ESP, rechts USB-C des TP4056 und der Schalter (Ø 20,2 mm). Im Boden das Sensorfenster Ø 12 mm.
+- **Deckel:** schiebt von der linken Schmalseite (ESP-USB-C-Seite) in zwei Nuten, rechts ist die Wand der Anschlag. Die linke Wand ist oberhalb des Deckels offen, die Griffmulde im Deckel liegt dort. Sitzt er zu streng oder zu locker, `LID_C` in `gen_case.py` anpassen.
+- Vor dem Druck nachmessen und in `gen_case.py` eintragen: Platine und Raster (`PCB_*`, `COL_RIM`), ESP (`ESP_*`), Sensormodul (`TOF_*`), TP4056 (`TP_*`), Akkuhalter (`BAT_*`), Schalter (`SW_*`).
+- **Der Sensor sitzt ca. 8 mm über der Oberseite des Verschlusses.** Dieser Abstand ist in der Messung enthalten: `dist_empty`/`dist_full` in der Firmware am echten Tank einstellen.
+
+## Montage auf dem Tankverschluss
+
+1. Gehäuse auf die Verschlussoberseite stellen, **Fenster auf die gewünschte Mitte**. Durch das Fenster (Ø 12) die Mitte anzeichnen. Bei Laschen auch die Schraubenlöcher anzeichnen.
+2. Verschluss abschrauben, **Ø 12 mm Loch bohren** (Ø 14 mm, wenn der Strahl streift). Grat entfernen.
+3. Gehäuse mit **Silikon** rund ums Fenster aufkleben, oder mit zwei Schrauben M3 und Dichtung durch die Laschen.
+4. Fertig bestückte Platine einsetzen (ESP und Modul gesteckt, Akkuhalter und TP4056 geklebt, Drähte angeschlossen), Deckel einschieben.
+
+Das Loch bleibt offen: Öldämpfe und Feuchte gelangen ins Gehäuse. Silikon rund ums Fenster hält das Gehäuse zur Verschlussoberseite dicht, ein transparentes Fenster wäre aufwendig und ist nicht modelliert.
 
 ## Wichtig
 
-- **USB am ESP nur mit Kippschalter AUS**, sonst geht USB-5V auf den Akku. Geladen wird über den TP4056.
+- **USB am ESP nur mit Kippschalter AUS**, sonst geht USB-5V auf den Akku. Geladen wird über den TP4056 (USB-C an der rechten Seite). **Erstes Flashen vor dem Einbau** (BOOT/RST sind im Gehäuse nicht erreichbar), danach OTA.
 - ToF misst das **nächste** Ziel im Kegel (ca. 25°, bei 1,5 m Abstand ca. 0,65 m Durchmesser). Ragt der Tankrand, eine Wand oder eine Einbaute in den Kegel, kommt deren Abstand statt dem Füllstand. Sensor mittig über der Öffnung, senkrecht, Fenster nicht verschmutzen.
 - Bei Tank 163 × 70 × 200 cm mit Öffnung 30 cm neben der Stirnwand kommt die Stirnwand ab ca. 1,35 m Tiefe in den Kegel. Die untersten ca. 12–15 cm (ca. 8–10 %) sind deshalb ungenau, die Anzeige bleibt dort bei ca. 1,38 m hängen. Darüber ist die Wand nicht im Weg. Ein Blendenrohr wäre möglich, brächte aber nur dort etwas, kostet Signal und müsste innen matt schwarz sein (weisses PLA reflektiert IR), daher weggelassen.
 - Dunkles, ruhiges Öl reflektiert schlecht. Reichweite am echten Tank prüfen, die 2 m sind bei dunklen Zielen oder Sonnenlicht nicht garantiert.
 - Der Sensor ist optisch, der Tank soll aber trotzdem nicht in Ex-Zonen (Benzin, Gas) betrieben werden.
+- Laufzeit: noch nicht gemessen. Ruhestrom mit Multimeter in Reihe zum Kippschalter messen (siehe [Firmware](firmware/README.md#sparmodus-des-sensors)).
+
+## Stand
+
+- Gehäuse: STL und Vorschau sind erzeugt, die Kollisionsprüfung mit den Platzhaltern (Platine, ESP, ToF, Akku, TP4056, Schalter) meldet keine Kollisionen. **Noch nicht gedruckt**, Passung (Deckel, Platine auf den Zapfen, USB-C-Stecker) ist ungetestet.
+- Firmware: überarbeitet, aber **nicht neu kompiliert** und nicht auf Hardware getestet.
+- Gemessen: Loch T 5,5 mm vom Plattenrand, ESP-Leisten 5 leere Reihen auseinander, ToF-Pins VIN/GND/SDA/SCL/INT/XSHUT.
+- Offen: TP4056-Masse (im Gehäuse mit 17,9 × 14,1 mm angenommen), Verschlussoberseite wirklich flach.
