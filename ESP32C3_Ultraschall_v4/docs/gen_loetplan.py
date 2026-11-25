@@ -205,7 +205,7 @@ def view(out, top, title, mirrored):
             out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="10" fill="#fff" stroke="{COLORS[net]}" stroke-width="2"/>')
             text(cx, cy + 4.5, num, 12, bold=True)
         used = {h for p in PARTS.values() for h in p[:2]} | {h for a, b in SOCKETS.values() for h in span(a, b)}
-        for h in used | set(EXTERNAL):
+        for h in sorted(used | set(EXTERNAL)):   # sortiert: gleiche Datei bei jedem Lauf
             x, y = xy(h)
             out.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="5" fill="#fff" stroke="#111" stroke-width="2"/>')
     else:  # Bestueckungsseite: Buchsen und Bauteile
