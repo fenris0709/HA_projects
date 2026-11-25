@@ -18,6 +18,8 @@ Ersetzt die Variante mit zwei Sensoren an einem Bus (Kabel, Adressen, Störungen
 
 Siehe [docs/schaltung.md](docs/schaltung.md): Pinout von ESP und Sensor mit allen Pullups und dem Pulldown, Schaltplan, Bauteilliste, Layout grob und externe Verdrahtung.
 
+Zum Löten: [docs/loetanleitung.md](docs/loetanleitung.md) mit festem Loch für jedes Bauteil, Lötplan, Drahtliste und Prüfschritten.
+
 Kurz:
 - I2C: SDA/SCL = GPIO6/7, 100 kHz, kurze Leitungen im Gehäuse.
 - **XSHUT bleibt** an GPIO5: Der Pulldown `Rxs` (1 kΩ) hält den Sensor im Deep Sleep im Standby (Sparmodus).

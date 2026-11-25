@@ -1,6 +1,6 @@
 # Schaltung und Lochraster-Layout (1 Sensor)
 
-Kein KiCad, nur diese Seite. Die Platine ist ein **Punktraster 60 × 40 mm** (20 Spalten A–T, 14 Reihen 1–14), alles wird mit Draht verbunden. **Nur ESP und ToF-Modul sind gesteckt** (Buchsenleisten), der Rest ist fest verlötet.
+Kein KiCad. Zum Aufbauen mit festen Lochpositionen: [Lötanleitung](loetanleitung.md). Die Platine ist ein **Punktraster 60 × 40 mm** (20 Spalten A–T, 14 Reihen 1–14), alles wird mit Draht verbunden. **Nur ESP und ToF-Modul sind gesteckt** (Buchsenleisten), der Rest ist fest verlötet.
 
 ## Einbaulage (wichtig)
 
