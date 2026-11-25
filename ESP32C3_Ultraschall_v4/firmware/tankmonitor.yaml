@@ -150,6 +150,7 @@ sensor:
   - platform: template
     id: level
     name: Füllstand
+    state_topic: ${name}/sensor/fuellstand/state   # ohne diese Zeile wuerde aus dem Umlaut "f__llstand"
     unit_of_measurement: "%"
     accuracy_decimals: 1
     state_class: measurement
@@ -271,7 +272,8 @@ script:
           condition:
             lambda: return id(ota_mode).has_state() && id(sleep_cfg).has_state();
           timeout: 3s            # nie gesetzt -> OTA gilt als OFF, Schlafdauer als Vorgabe
-      - lambda: id(mode_status).publish_state(id(ota_mode).has_state() && id(ota_mode).state == "ON" ? "OTA aktiv" : "Normal");
+      - lambda: |-
+          id(mode_status).publish_state(id(ota_mode).has_state() && id(ota_mode).state == "ON" ? "OTA aktiv" : "Normal");
       - script.execute: apply_sleep
       - delay: 1s                # MQTT-Sendepuffer leeren
       # 5) Schlafen, ausser OTA-Modus ist aktiv
